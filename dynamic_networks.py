@@ -190,6 +190,16 @@ class dynamic_dense_model():
       layer.set_state(layer_state)
       self.layers += [layer]
 
+  def assert_consistency(self):
+    previous_size = self.input_size
+    for l in self.layers:
+      assert(l.input_size == previous_size)
+      assert(l.input_size == l.w.shape[0])
+      assert(l.output_size == l.w.shape[1])
+      assert(l.output_size == l.b.shape[0])
+      previous_size = l.output_size
+    assert(self.output_size == previous_size)
+
 
   ### Apply the model
   def __call__(self, inputs):
@@ -246,6 +256,8 @@ def network_update_step(data_batch, loss_function, dense_model,
     accepted = False
   else:
     accepted = True
+
+  dense_model.assert_consistency()
   
   return accepted
 
