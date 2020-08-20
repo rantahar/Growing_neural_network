@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import time
 
-from dynamic_networks import dynamic_dense, network_update_step
+from dynamic_networks import dynamic_dense_model, network_update_step
 
 #################################################
 # A simple test for training the dynamic network
@@ -49,8 +49,7 @@ conv_filter_2 = tf.Variable(tf.random.normal((3, 3, 32, 64), stddev=0.1), dtype=
 conv_filter_3 = tf.Variable(tf.random.normal((3, 3, 64, 64), stddev=0.1), dtype=tf.float32)
 
 ### Create two dynamic dense layers
-ed1 = dynamic_dense(1024, 2, new_weight_std)
-ed2 = dynamic_dense(2, 10, new_weight_std)
+dense_model = dynamic_dense_model(1024, 10, new_weight_std)
 
 
 def classifier(inputs):
@@ -68,10 +67,7 @@ def classifier(inputs):
   # 4, 4, 64
   x = tf.reshape(x, (x.shape[0], -1))
   # 1024
-  x = ed1(x)
-  x = tf.nn.leaky_relu(x)
-  # N
-  x = ed2(x)
+  x = dense_model(x)
   # 10
   return x
 
@@ -94,7 +90,7 @@ def compute_loss(data):
 optimizer = tf.optimizers.Adam()
 
 def gradient_train_step(data):
-  trainable_variables = [conv_filter_1, conv_filter_2, conv_filter_3] + ed1.trainable_variables() + ed2.trainable_variables()
+  trainable_variables = [conv_filter_1, conv_filter_2, conv_filter_3] + dense_model.trainable_variables()
 
   with tf.GradientTape() as tape:
     tape.watch(trainable_variables)
@@ -114,10 +110,10 @@ for epoch in range(1, EPOCHS + 1):
   # Each randomly adds or removes a feature.
   network_changes = 0
   for i, element in enumerate(train_dataset):
-    network_changes += network_update_step(element, compute_loss, [ed1, ed2], weight_penalty)
+    network_changes += network_update_step(element, compute_loss, dense_model, weight_penalty)
     if i==network_updates_per_epoch:
       break
-  print("Features {}, number of changes {}".format(ed1.output_size, network_changes))
+  print("Weights {}, number of changes {}".format(dense_model.weight_count(), network_changes))
   
   # Next the standard training step. This runs over all the
   # batches. 

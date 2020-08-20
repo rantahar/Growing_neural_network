@@ -72,8 +72,65 @@ class dynamic_dense():
 
 
 
-### Add and/or remove neurons between two dynamic layers
-# Either attempts to add or remove a neuron.
+# A model formed of a number of dynamical dense layers
+class dynamic_dense_model():
+  
+  ### Create the initial model configuration.
+  def __init__(self, input_size, output_size, new_weight_std = 0.1,
+               activation = tf.nn.leaky_relu):
+    self.layers = [
+      dynamic_dense(input_size, 1, new_weight_std),
+      dynamic_dense(1, output_size, new_weight_std)
+      ]
+    self.activation = activation
+
+  ### Returns the number of weights currently in the model
+  def weight_count(self):
+    count = 0
+    for l in self.layers:
+      count += l.input_size*l.output_size + l.output_size
+    return count
+
+  ### Add a feature
+  def expand(self):
+    # Expand the number of inputs in first net
+    # and the number of outputs in the second
+    self.layers[0].expand_out()
+    self.layers[1].expand_in()
+
+  ### Remove a random feature
+  def contract(self):
+    # Choose a random feature
+    n = (int)(self.layers[0].output_size*np.random.rand())
+    # remove it from both networks
+    self.layers[0].contract_out(n)
+    self.layers[1].contract_in(n)
+  
+  ### Returns a list of trainable variables
+  def trainable_variables(self):
+    return [var for l in self.layers for var in l.trainable_variables()]
+  
+  ### Returns the current state of the model
+  def get_state(self):
+    return [l.get_state() for l in self.layers]
+
+  ### Overwrite the current state
+  def set_state(self, state):
+    for layer, layer_state in zip(self.layers, state):
+      layer.set_state(layer_state)
+
+  ### Apply the model
+  def __call__(self, inputs):
+    x = inputs
+    for l in self.layers[:-1]:
+      x = l(x)
+      x = self.activation(x)
+    x = self.layers[-1](x)
+    return x
+
+
+
+
 ### Add and/or remove features between two dynamic layers
 # Either attempts to add or remove a feature.
 #
@@ -84,45 +141,28 @@ class dynamic_dense():
 # Remove: A random feature is chosen. It is removed if this
 #         reduces the loss on the current data batch
 #
-def network_update_step(data_batch, loss_function, nets, weight_penalty = 1e-6):
+def network_update_step(data_batch, loss_function, dense_model, weight_penalty = 1e-6):
   
   # Get the current loss, including the weight penalty
-  feature_count = nets[0].output_size
-  loss1 = loss_function(data_batch) + weight_penalty*feature_count*feature_count
+  loss1 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()
   
   # Make note of the current state
-  state1 = nets[0].get_state()
-  state2 = nets[1].get_state()
+  initial_state = dense_model.get_state()
 
   # Randomly choose wether to add or remove
   if np.random.rand() > 0.5:
-    # Adding:
-    # expand the number of inputs in first net
-    # and the number of outputs in the second
-    nets[0].expand_out()
-    nets[1].expand_in()
-
-    # Calculate the loss for the new network
-    feature_count = nets[0].output_size
-    loss2 = loss_function(data_batch) + weight_penalty*feature_count*feature_count
-
+    dense_model.expand()
   else:
-    # Remove:
-    # Choose a random feature
-    n = (int)(nets[0].output_size*np.random.rand())
-    # remove it from both networks
-    nets[0].contract_out(n)
-    nets[1].contract_in(n)
+    dense_model.contract()
 
   # Calculate the loss in the new network
-  loss2 = loss_function(data_batch) + weight_penalty*feature_count*feature_count
+  loss2 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()
   # and the change in the loss
   dloss = loss2-loss1
 
   # If the loss increases, return to the original state
   if dloss > 0 :
-    nets[0].set_state(state1)
-    nets[1].set_state(state2)
+    dense_model.set_state(initial_state)
     accepted = False
   else:
     accepted = True
