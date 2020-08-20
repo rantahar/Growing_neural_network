@@ -1,4 +1,4 @@
-# Growing_neural_network
+# Growing Neural Network
 A neural network layer that grows dynamically during training 
 
 
