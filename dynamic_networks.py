@@ -15,8 +15,8 @@ class dynamic_dense():
 
   ### Create the layer with a given initial configuration.
   def __init__(self, input_size, output_size, new_weight_std = 0.1):
-    self.w = tf.Variable(tf.random.normal((input_size, output_size), stddev=0.1))
-    self.b = tf.Variable(tf.random.normal((output_size,), stddev=0.1))
+    self.w = tf.Variable(tf.random.normal((input_size, output_size), stddev=0.1), trainable=True)
+    self.b = tf.Variable(tf.random.normal((output_size,), stddev=0.1), trainable=True)
     self.input_size = input_size
     self.output_size = output_size
     self.new_weight_std = 0.01
@@ -25,27 +25,27 @@ class dynamic_dense():
   def expand_out(self):
     new_row =  tf.random.normal((self.input_size, 1), stddev=self.new_weight_std)
     new_bias = tf.random.normal((1,), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([self.w, new_row], 1))
-    self.b = tf.Variable(tf.concat([self.b, new_bias], 0))
+    self.w = tf.Variable(tf.concat([self.w, new_row], 1), trainable=True)
+    self.b = tf.Variable(tf.concat([self.b, new_bias], 0), trainable=True)
     self.output_size = self.output_size + 1
 
   ### Remove a random output feature
   def contract_out(self, n):
     if self.output_size > 1:
-      self.w = tf.Variable(tf.concat([self.w[:,:n], self.w[:,n+1:]], 1))
-      self.b = tf.Variable(tf.concat([self.b[:n], self.b[n+1:]], 0))
+      self.w = tf.Variable(tf.concat([self.w[:,:n], self.w[:,n+1:]], 1), trainable=True)
+      self.b = tf.Variable(tf.concat([self.b[:n], self.b[n+1:]], 0), trainable=True)
       self.output_size = self.output_size - 1
 
   ### Add a random input feature
   def contract_in(self, n):
     if self.input_size > 1:
-      self.w = tf.Variable(tf.concat([self.w[:n], self.w[n+1:]], 0))
+      self.w = tf.Variable(tf.concat([self.w[:n], self.w[n+1:]], 0), trainable=True)
       self.input_size = self.input_size - 1
 
   ### Remove a random input feature
   def expand_in(self):
     new_column = tf.random.normal((1, self.output_size), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([self.w, new_column], 0))
+    self.w = tf.Variable(tf.concat([self.w, new_column], 0), trainable=True)
     self.input_size = self.input_size + 1
 
   ### Returns a list of trainable variables
@@ -78,18 +78,20 @@ class dynamic_dense():
 class dynamic_dense_model():
   
   ### Create the initial model configuration.
-  def __init__(self, input_size, output_size, intermediate_layers=0, new_weight_std = 0.1,
-               activation = tf.nn.relu):
+  def __init__(self, input_size, output_size, intermediate_layers=0, intermediate_layer_size=8,
+               new_weight_std = 0.1, activation = tf.nn.relu):
     # Input layer
-    self.layers = [dynamic_dense(input_size, 2, new_weight_std)]
+    self.layers = [dynamic_dense(input_size, intermediate_layer_size, new_weight_std)]
 
     # Intermediate layers
     for n in range(intermediate_layers):
-      self.layers += [dynamic_dense(2, 2, new_weight_std)]
+      self.layers += [dynamic_dense(intermediate_layer_size, intermediate_layer_size, new_weight_std)]
     
     # Output layer
-    self.layers += [dynamic_dense(2, output_size, new_weight_std)]
+    self.layers += [dynamic_dense(intermediate_layer_size, output_size, new_weight_std)]
     self.new_weight_std = new_weight_std
+    self.input_size = input_size
+    self.output_size = output_size
     self.activation = activation
 
   ### Returns the number of weights currently in the model
@@ -122,11 +124,11 @@ class dynamic_dense_model():
     l1 = self.layers[nl]
 
     # Build an intermediate layer. Start close to one
-    stdiv = self.new_weight_std/l1.output_size
+    stdiv = self.new_weight_std/(l1.output_size)
     new_layer = dynamic_dense(l1.output_size, l1.output_size, self.new_weight_std)
-    state = list(new_layer.get_state())
-    state[0] = state[0] + 1
-    new_layer.set_state(state)
+    new_w = tf.eye(l1.output_size)+tf.Variable(tf.random.normal((l1.output_size, l1.output_size), stddev=stdiv), trainable=True)
+    new_b = tf.Variable(tf.random.normal((l1.output_size,), stddev=stdiv), trainable=True)
+    new_layer.set_state((new_w, new_b, l1.output_size, l1.output_size))
     self.layers.insert(nl+1, new_layer)
 
   ### Remove a random feature
@@ -158,8 +160,8 @@ class dynamic_dense_model():
       # Pull the states of the two layers and construct new variables
       st1 = l1.get_state()
       st2 = l2.get_state()
-      new_w = tf.Variable(tf.matmul(st1[0],st2[0]))
-      new_b = tf.Variable(tf.matmul(tf.expand_dims(st1[1],0),st2[0])[0,:] + st2[1])
+      new_w = tf.Variable(tf.matmul(st1[0],st2[0]), trainable=True)
+      new_b = tf.Variable(tf.matmul(tf.expand_dims(st1[1],0),st2[0])[0,:] + st2[1], trainable=True)
 
       assert(new_w.shape == (l1.input_size, l2.output_size))
 
