@@ -34,9 +34,7 @@ class dynamic_dense():
   ### Remove a random output neuron
   def contract_out(self, n):
     if self.output_size > 1:
-      old_w = tf.transpose(self.w)
-      new_w = tf.concat([old_w[:n], old_w[n+1:]], 0)
-      self.w = tf.Variable(tf.transpose(new_w))
+      self.w = tf.Variable(tf.concat([self.w[:,:n], self.w[:,n+1:]], 1))
       self.b = tf.Variable(tf.concat([self.b[:n], self.b[n+1:]], 0))
       self.output_size = self.output_size - 1
 
@@ -48,11 +46,8 @@ class dynamic_dense():
 
   ### Remove a random input neuron
   def expand_in(self):
-    old_w = self.w
-    old_w = tf.transpose(old_w)
-    new_column = tf.random.normal((self.output_size, 1), stddev=self.new_weight_std)
-    new_w = tf.concat([old_w, new_column], 1)
-    self.w = tf.Variable(tf.transpose(new_w))
+    new_column = tf.random.normal((1, self.output_size), stddev=self.new_weight_std)
+    self.w = tf.Variable(tf.concat([self.w, new_column], 0))
     self.input_size = self.input_size + 1
 
   ### Returns a list of trainable variables
