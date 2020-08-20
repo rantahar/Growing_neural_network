@@ -49,7 +49,7 @@ conv_filter_2 = tf.Variable(tf.random.normal((3, 3, 32, 64), stddev=0.1), dtype=
 conv_filter_3 = tf.Variable(tf.random.normal((3, 3, 64, 64), stddev=0.1), dtype=tf.float32)
 
 ### Create two dynamic dense layers
-dense_model = dynamic_dense_model(1024, 10, new_weight_std = new_weight_std)
+dense_model = dynamic_dense_model(1024, 10, intermediate_layers=1, new_weight_std = new_weight_std)
 
 
 def classifier(inputs):
@@ -114,6 +114,7 @@ for epoch in range(1, EPOCHS + 1):
     if i==network_updates_per_epoch:
       break
   print("Weights {}, number of changes {}".format(dense_model.weight_count(), network_changes))
+  dense_model.summary()
   
   # Next the standard training step. This runs over all the
   # batches. 

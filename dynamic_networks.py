@@ -96,20 +96,34 @@ class dynamic_dense_model():
       count += l.input_size*l.output_size + l.output_size
     return count
 
+  def summary(self):
+    for i, l in enumerate(self.layers):
+      weights = l.input_size*l.output_size + l.output_size
+      print("Layer {}: ({},{}),  number weights {}".format(i, l.input_size, l.output_size, weights))
+
   ### Add a feature
   def expand(self):
-    # Expand the number of inputs in first net
-    # and the number of outputs in the second
-    self.layers[0].expand_out()
-    self.layers[1].expand_in()
+    # Pick a layer
+    nl = (int)((len(self.layers)-1)*np.random.rand())
+    l1 = self.layers[nl]
+    l2 = self.layers[nl+1]
+    # Expand the number of outputs in the layer
+    # and the number of inputs in the next one
+    l1.expand_out()
+    l2.expand_in()
 
   ### Remove a random feature
   def contract(self):
+    # Pick a layer
+    nl = (int)((len(self.layers)-1)*np.random.rand())
+    l1 = self.layers[nl]
+    l2 = self.layers[nl+1]
+
     # Choose a random feature
     n = (int)(self.layers[0].output_size*np.random.rand())
-    # remove it from both networks
-    self.layers[0].contract_out(n)
-    self.layers[1].contract_in(n)
+    # remove it from both the layer and the next one
+    l1.contract_out(n)
+    l2.contract_in(n)
   
   ### Returns a list of trainable variables
   def trainable_variables(self):
