@@ -35,10 +35,23 @@ does not matter much.
 
 ## The update
 
-The ``network_update_step`` function attempts to add or remove
-a feature between two given dynamical layers.
-In both cases the update is only accepted if it decreases the
-loss, evaluated on a single batch of data.
+The ``network_update_step`` function attempts to update the
+network using one of four possible steps:
+
+**Add a feature**: Picks a random layer and adds a feature with
+random weights.
+
+**Remove a feature**: Picks a random feature in a random layer
+and removes it.
+
+**Add a layer**: Adds a layer between two existing layers. The
+weights are initialized to be close to a unit matrix. 
+
+**Remove a layer**: Remove the activation between two layers,
+contracting them into a single layer.
+
+The change is only accepted if it decreases the loss function 
+evaluated on a single batch of data.
 
 The update is stochastic, similar to the gradient descent
 update, in the sense that the update weight is evaluated
