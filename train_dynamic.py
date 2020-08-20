@@ -49,7 +49,7 @@ conv_filter_2 = tf.Variable(tf.random.normal((3, 3, 32, 64), stddev=0.1), dtype=
 conv_filter_3 = tf.Variable(tf.random.normal((3, 3, 64, 64), stddev=0.1), dtype=tf.float32)
 
 ### Create two dynamic dense layers
-dense_model = dynamic_dense_model(1024, 10, new_weight_std)
+dense_model = dynamic_dense_model(1024, 10, new_weight_std = new_weight_std)
 
 
 def classifier(inputs):

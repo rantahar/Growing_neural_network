@@ -76,12 +76,17 @@ class dynamic_dense():
 class dynamic_dense_model():
   
   ### Create the initial model configuration.
-  def __init__(self, input_size, output_size, new_weight_std = 0.1,
+  def __init__(self, input_size, output_size, intermediate_layers=0, new_weight_std = 0.1,
                activation = tf.nn.leaky_relu):
-    self.layers = [
-      dynamic_dense(input_size, 1, new_weight_std),
-      dynamic_dense(1, output_size, new_weight_std)
-      ]
+    # Input layer
+    self.layers = [dynamic_dense(input_size, 1, new_weight_std)]
+
+    # Intermediate layers
+    for n in range(intermediate_layers):
+      self.layers += [dynamic_dense(1, 1, new_weight_std)]
+    
+    # Output layer
+    self.layers += [dynamic_dense(1, output_size, new_weight_std)]
     self.activation = activation
 
   ### Returns the number of weights currently in the model
