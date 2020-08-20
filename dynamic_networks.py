@@ -79,7 +79,7 @@ class dynamic_dense_model():
   
   ### Create the initial model configuration.
   def __init__(self, input_size, output_size, intermediate_layers=0, new_weight_std = 0.1,
-               activation = tf.nn.leaky_relu):
+               activation = tf.nn.relu):
     # Input layer
     self.layers = [dynamic_dense(input_size, 2, new_weight_std)]
 
@@ -212,7 +212,7 @@ class dynamic_dense_model():
 #         reduces the loss on the current data batch
 #
 def network_update_step(data_batch, loss_function, dense_model, 
-                        weight_penalty = 1e-9, layer_change_rate = 0.2
+                        weight_penalty = 1e-9, layer_change_rate = 0.1
                        ):
   
   # Get the current loss, including the weight penalty
