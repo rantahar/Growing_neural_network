@@ -1,0 +1,60 @@
+Neurons 1, number of changes 6
+Epoch 1 done in 14.040059566497803 seconds, loss 2.1048847727775573, validation loss 2.0349452674388884
+Neurons 3, number of changes 7
+Epoch 2 done in 13.408330202102661 seconds, loss 1.8679317150115968, validation loss 1.7516228675842285
+Neurons 5, number of changes 4
+Epoch 3 done in 12.559774398803711 seconds, loss 1.652345499277115, validation loss 1.5878745794296265
+Neurons 6, number of changes 3
+Epoch 4 done in 12.396498918533325 seconds, loss 1.5123593728542328, validation loss 1.4694821238517761
+Neurons 7, number of changes 1
+Epoch 5 done in 13.626041173934937 seconds, loss 1.4061477422714235, validation loss 1.343061567544937
+Neurons 8, number of changes 1
+Epoch 6 done in 14.571999549865723 seconds, loss 1.3218683955669404, validation loss 1.290518070459366
+Neurons 10, number of changes 2
+Epoch 7 done in 12.900310039520264 seconds, loss 1.2399760427474975, validation loss 1.2471033805608749
+Neurons 14, number of changes 4
+Epoch 8 done in 14.285120725631714 seconds, loss 1.1719018024206163, validation loss 1.1758013594150543
+Neurons 16, number of changes 2
+Epoch 9 done in 14.022839307785034 seconds, loss 1.1140125805139542, validation loss 1.1464749693870544
+Neurons 16, number of changes 2
+Epoch 10 done in 12.986186742782593 seconds, loss 1.0549772415161134, validation loss 1.1153823256492614
+Neurons 19, number of changes 5
+Epoch 11 done in 14.03692078590393 seconds, loss 1.0122813044786454, validation loss 1.0939928030967712
+Neurons 20, number of changes 3
+Epoch 12 done in 13.000609397888184 seconds, loss 0.9698307943344117, validation loss 1.0796136891841888
+Neurons 19, number of changes 1
+Epoch 13 done in 14.130448818206787 seconds, loss 0.935121012210846, validation loss 1.0467390996217727
+Neurons 22, number of changes 3
+Epoch 14 done in 13.91800308227539 seconds, loss 0.9006752048730851, validation loss 1.0677349132299423
+Neurons 23, number of changes 1
+Epoch 15 done in 14.240537166595459 seconds, loss 0.8660886119604111, validation loss 1.0599950408935548
+Neurons 23, number of changes 2
+Epoch 16 done in 13.929046154022217 seconds, loss 0.841692806839943, validation loss 1.0400574380159378
+Neurons 26, number of changes 3
+Epoch 17 done in 13.276328086853027 seconds, loss 0.8124839855432511, validation loss 1.0251352381706238
+Neurons 26, number of changes 2
+Epoch 18 done in 13.233223915100098 seconds, loss 0.7807386932373047, validation loss 1.039636286497116
+Neurons 24, number of changes 2
+Epoch 19 done in 13.55621862411499 seconds, loss 0.7763021205067635, validation loss 1.0472860372066497
+Neurons 25, number of changes 3
+Epoch 20 done in 14.25719666481018 seconds, loss 0.7450088915228844, validation loss 1.0361125963926316
+Neurons 25, number of changes 2
+Epoch 21 done in 15.421384572982788 seconds, loss 0.714117965400219, validation loss 1.0708946853876113
+Neurons 25, number of changes 2
+Epoch 22 done in 16.02512502670288 seconds, loss 0.6916210889816284, validation loss 1.0663657134771347
+Neurons 25, number of changes 2
+Epoch 23 done in 12.644887208938599 seconds, loss 0.6625271990895272, validation loss 1.0492491698265076
+Neurons 26, number of changes 1
+Epoch 24 done in 14.949814319610596 seconds, loss 0.6470314926505089, validation loss 1.115171213746071
+Neurons 26, number of changes 6
+Epoch 25 done in 15.058154344558716 seconds, loss 0.6387404512166978, validation loss 1.0937050789594651
+Neurons 27, number of changes 3
+Epoch 26 done in 15.298588752746582 seconds, loss 0.6215587577223778, validation loss 1.1094363790750503
+Neurons 32, number of changes 5
+Epoch 27 done in 14.292964696884155 seconds, loss 0.5970881931781769, validation loss 1.1239638710021973
+Neurons 31, number of changes 1
+Epoch 28 done in 13.972975254058838 seconds, loss 0.576081710755825, validation loss 1.1588019979000093
+Neurons 31, number of changes 2
+Epoch 29 done in 14.77868103981018 seconds, loss 0.5581479920744896, validation loss 1.1733934319019317
+Neurons 32, number of changes 1
+Epoch 30 done in 14.212250232696533 seconds, loss 0.5420163332223892, validation loss 1.174635033607483
