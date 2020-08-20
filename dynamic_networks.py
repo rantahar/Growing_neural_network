@@ -141,7 +141,7 @@ class dynamic_dense_model():
 # Remove: A random feature is chosen. It is removed if this
 #         reduces the loss on the current data batch
 #
-def network_update_step(data_batch, loss_function, dense_model, weight_penalty = 1e-6):
+def network_update_step(data_batch, loss_function, dense_model, weight_penalty = 1e-9):
   
   # Get the current loss, including the weight penalty
   loss1 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()

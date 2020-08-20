@@ -24,7 +24,7 @@ batch_size = 100
 
 #### Network update parameters
 network_updates_per_epoch = 10
-weight_penalty = 1e-6
+weight_penalty = 1e-9
 new_weight_std = 0.1
 
 
