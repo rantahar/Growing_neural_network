@@ -113,7 +113,6 @@ for epoch in range(1, EPOCHS + 1):
     network_changes += network_update_step(element, compute_loss, dense_model, weight_penalty)
     if i==network_updates_per_epoch:
       break
-  print("Weights {}, number of changes {}".format(dense_model.weight_count(), network_changes))
   dense_model.summary()
   
   # Next the standard training step. This runs over all the
