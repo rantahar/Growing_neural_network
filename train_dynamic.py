@@ -13,7 +13,7 @@ from dynamic_networks import dynamic_dense, network_update_step
 # The weights are trained using standard methods
 # (Adam here). Between each epoch we update the
 # network a by randomly adding and/or removing
-# neurons. 
+# features. 
 #################################################
 
 
@@ -111,13 +111,13 @@ for epoch in range(1, EPOCHS + 1):
   start_time = time.time()
 
   # Run a number of network update steps.
-  # Each randomly adds or removes a neuron.
+  # Each randomly adds or removes a feature.
   network_changes = 0
   for i, element in enumerate(train_dataset):
     network_changes += network_update_step(element, compute_loss, [ed1, ed2], weight_penalty)
     if i==network_updates_per_epoch:
       break
-  print("Neurons {}, number of changes {}".format(ed1.output_size, network_changes))
+  print("Features {}, number of changes {}".format(ed1.output_size, network_changes))
   
   # Next the standard training step. This runs over all the
   # batches. 

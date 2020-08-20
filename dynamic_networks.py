@@ -1,7 +1,7 @@
 #################################################
 # Implements a dynamical dense layer that allows
 # both adding and removing both input and output
-# neurons and a simple update step for both.
+# features and a simple update step for both.
 #
 # Inspired by "Lifelong Learning with Dynamically
 # Expandable Networks", ICLR, 2017 (arXiv:1708.01547)
@@ -21,7 +21,7 @@ class dynamic_dense():
     self.output_size = output_size
     self.new_weight_std = 0.01
 
-  ### Add a random output neuron
+  ### Add a random output feature
   def expand_out(self):
     old_w = self.w
     old_b = self.b
@@ -31,20 +31,20 @@ class dynamic_dense():
     self.b = tf.Variable(tf.concat([old_b, new_bias], 0))
     self.output_size = self.output_size + 1
 
-  ### Remove a random output neuron
+  ### Remove a random output feature
   def contract_out(self, n):
     if self.output_size > 1:
       self.w = tf.Variable(tf.concat([self.w[:,:n], self.w[:,n+1:]], 1))
       self.b = tf.Variable(tf.concat([self.b[:n], self.b[n+1:]], 0))
       self.output_size = self.output_size - 1
 
-  ### Add a random input neuron
+  ### Add a random input feature
   def contract_in(self, n):
     if self.input_size > 1:
       self.w = tf.Variable(tf.concat([self.w[:n], self.w[n+1:]], 0))
       self.input_size = self.input_size - 1
 
-  ### Remove a random input neuron
+  ### Remove a random input feature
   def expand_in(self):
     new_column = tf.random.normal((1, self.output_size), stddev=self.new_weight_std)
     self.w = tf.Variable(tf.concat([self.w, new_column], 0))
@@ -74,19 +74,21 @@ class dynamic_dense():
 
 ### Add and/or remove neurons between two dynamic layers
 # Either attempts to add or remove a neuron.
+### Add and/or remove features between two dynamic layers
+# Either attempts to add or remove a feature.
 #
-# Add: When a neuron is added, the weights are drawn
-#      randomly. The new neuron is kept if it reduces the
+# Add: When a feature is added, the weights are drawn
+#      randomly. The new feature is kept if it reduces the
 #      loss on the current data batch
 #
-# Remove: A random neuron is chosen. It is removed if this
+# Remove: A random feature is chosen. It is removed if this
 #         reduces the loss on the current data batch
 #
 def network_update_step(data_batch, loss_function, nets, weight_penalty = 1e-6):
   
   # Get the current loss, including the weight penalty
-  neuron_count = nets[0].output_size
-  loss1 = loss_function(data_batch) + weight_penalty*neuron_count*neuron_count
+  feature_count = nets[0].output_size
+  loss1 = loss_function(data_batch) + weight_penalty*feature_count*feature_count
   
   # Make note of the current state
   state1 = nets[0].get_state()
@@ -101,19 +103,19 @@ def network_update_step(data_batch, loss_function, nets, weight_penalty = 1e-6):
     nets[1].expand_in()
 
     # Calculate the loss for the new network
-    neuron_count = nets[0].output_size
-    loss2 = loss_function(data_batch) + weight_penalty*neuron_count*neuron_count
+    feature_count = nets[0].output_size
+    loss2 = loss_function(data_batch) + weight_penalty*feature_count*feature_count
 
   else:
     # Remove:
-    # Choose a random neuron
+    # Choose a random feature
     n = (int)(nets[0].output_size*np.random.rand())
     # remove it from both networks
     nets[0].contract_out(n)
     nets[1].contract_in(n)
 
   # Calculate the loss in the new network
-  loss2 = loss_function(data_batch) + weight_penalty*neuron_count*neuron_count
+  loss2 = loss_function(data_batch) + weight_penalty*feature_count*feature_count
   # and the change in the loss
   dloss = loss2-loss1
 
