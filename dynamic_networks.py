@@ -23,12 +23,10 @@ class dynamic_dense():
 
   ### Add a random output feature
   def expand_out(self):
-    old_w = self.w
-    old_b = self.b
     new_row =  tf.random.normal((self.input_size, 1), stddev=self.new_weight_std)
     new_bias = tf.random.normal((1,), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([old_w, new_row], 1))
-    self.b = tf.Variable(tf.concat([old_b, new_bias], 0))
+    self.w = tf.Variable(tf.concat([self.w, new_row], 1))
+    self.b = tf.Variable(tf.concat([self.b, new_bias], 0))
     self.output_size = self.output_size + 1
 
   ### Remove a random output feature
@@ -68,7 +66,11 @@ class dynamic_dense():
 
   ### Call the layer
   def __call__(self, inputs):
+    assert(self.w.shape == (self.input_size,self.output_size))
+    assert(self.b.shape == (self.output_size))
     return tf.matmul(inputs,self.w) + self.b
+
+
 
 
 
@@ -79,14 +81,15 @@ class dynamic_dense_model():
   def __init__(self, input_size, output_size, intermediate_layers=0, new_weight_std = 0.1,
                activation = tf.nn.leaky_relu):
     # Input layer
-    self.layers = [dynamic_dense(input_size, 1, new_weight_std)]
+    self.layers = [dynamic_dense(input_size, 2, new_weight_std)]
 
     # Intermediate layers
     for n in range(intermediate_layers):
-      self.layers += [dynamic_dense(1, 1, new_weight_std)]
+      self.layers += [dynamic_dense(2, 2, new_weight_std)]
     
     # Output layer
-    self.layers += [dynamic_dense(1, output_size, new_weight_std)]
+    self.layers += [dynamic_dense(2, output_size, new_weight_std)]
+    self.new_weight_std = new_weight_std
     self.activation = activation
 
   ### Returns the number of weights currently in the model
@@ -112,6 +115,20 @@ class dynamic_dense_model():
     l1.expand_out()
     l2.expand_in()
 
+  ### Add a layer
+  def add_layer(self):
+    # Pick a layer
+    nl = (int)((len(self.layers)-1)*np.random.rand())
+    l1 = self.layers[nl]
+
+    # Build an intermediate layer. Start close to one
+    stdiv = self.new_weight_std/l1.output_size
+    new_layer = dynamic_dense(l1.output_size, l1.output_size, self.new_weight_std)
+    state = list(new_layer.get_state())
+    state[0] = state[0] + 1
+    new_layer.set_state(state)
+    self.layers.insert(nl+1, new_layer)
+
   ### Remove a random feature
   def contract(self):
     # Pick a layer
@@ -124,6 +141,36 @@ class dynamic_dense_model():
     # remove it from both the layer and the next one
     l1.contract_out(n)
     l2.contract_in(n)
+
+  ### Remove a layer
+  # Achieves this by removing the activation step between
+  # two layers, producing a linear operation
+  def remove_layer(self):
+    if len(self.layers) > 2:
+      # Pick a layer
+      nl = (int)((len(self.layers)-1)*np.random.rand())
+  
+      # Just drop the activation between the layer and the next,
+      # reducing them to a single linear operation
+      l1 = self.layers[nl]
+      l2 = self.layers[nl+1]
+
+      # Pull the states of the two layers and construct new variables
+      st1 = l1.get_state()
+      st2 = l2.get_state()
+      new_w = tf.Variable(tf.matmul(st1[0],st2[0]))
+      new_b = tf.Variable(tf.matmul(tf.expand_dims(st1[1],0),st2[0])[0,:] + st2[1])
+
+      assert(new_w.shape == (l1.input_size, l2.output_size))
+
+      # Build the new layer
+      state = [new_w, new_b, l1.input_size, l2.output_size]
+      new_layer = dynamic_dense(2, 2, self.new_weight_std)
+      new_layer.set_state(state)
+
+      del self.layers[nl]
+      del self.layers[nl]
+      self.layers.insert(nl, new_layer)
   
   ### Returns a list of trainable variables
   def trainable_variables(self):
@@ -135,8 +182,12 @@ class dynamic_dense_model():
 
   ### Overwrite the current state
   def set_state(self, state):
-    for layer, layer_state in zip(self.layers, state):
+    self.layers = []
+    for layer_state in state:
+      layer = dynamic_dense(1, 1, self.new_weight_std)
       layer.set_state(layer_state)
+      self.layers += [layer]
+
 
   ### Apply the model
   def __call__(self, inputs):
@@ -160,7 +211,9 @@ class dynamic_dense_model():
 # Remove: A random feature is chosen. It is removed if this
 #         reduces the loss on the current data batch
 #
-def network_update_step(data_batch, loss_function, dense_model, weight_penalty = 1e-9):
+def network_update_step(data_batch, loss_function, dense_model, 
+                        weight_penalty = 1e-9, layer_change_rate = 0.2
+                       ):
   
   # Get the current loss, including the weight penalty
   loss1 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()
@@ -170,9 +223,15 @@ def network_update_step(data_batch, loss_function, dense_model, weight_penalty =
 
   # Randomly choose wether to add or remove
   if np.random.rand() > 0.5:
-    dense_model.expand()
+    if np.random.rand() > layer_change_rate:
+      dense_model.expand()
+    else:
+      dense_model.add_layer()
   else:
-    dense_model.contract()
+    if np.random.rand() > layer_change_rate:
+      dense_model.contract()
+    else:
+      dense_model.remove_layer()
 
   # Calculate the loss in the new network
   loss2 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()
