@@ -16,7 +16,7 @@ network updates per epoch and the weight penalty.
 
 ## The dense layer
 
-The 'dynamic_dense' class implements a simple dense layer
+The ``dynamic_dense`` class implements a simple dense layer
 with the ability to add and remove features dynamically.
 
 The added weights are drawn from a normal distribution.
@@ -35,7 +35,7 @@ does not matter much.
 
 ## The update
 
-The 'network_update_step' function attempts to add or remove
+The ``network_update_step`` function attempts to add or remove
 a feature between two given dynamical layers.
 In both cases the update is only accepted if it decreases the
 loss, evaluated on a single batch of data.
