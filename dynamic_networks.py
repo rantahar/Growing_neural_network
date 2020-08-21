@@ -59,6 +59,8 @@ class dynamic_dense():
   ### Overwrite the current state of the layer with
   # the given state
   def set_state(self, state):
+    assert(not isinstance(state[0], tf.Tensor))
+    assert(not isinstance(state[1], tf.Tensor))
     self.w = state[0]
     self.b = state[1]
     self.input_size = state[2]
@@ -126,7 +128,7 @@ class dynamic_dense_model():
     # Build an intermediate layer. Start close to one
     stdiv = self.new_weight_std/(l1.output_size)
     new_layer = dynamic_dense(l1.output_size, l1.output_size, self.new_weight_std)
-    new_w = tf.eye(l1.output_size)+tf.Variable(tf.random.normal((l1.output_size, l1.output_size), stddev=stdiv), trainable=True)
+    new_w = tf.Variable(tf.eye(l1.output_size)+tf.random.normal((l1.output_size, l1.output_size), stddev=stdiv), trainable=True)
     new_b = tf.Variable(tf.random.normal((l1.output_size,), stddev=stdiv), trainable=True)
     new_layer.set_state((new_w, new_b, l1.output_size, l1.output_size))
     self.layers.insert(nl+1, new_layer)
@@ -167,7 +169,7 @@ class dynamic_dense_model():
 
       # Build the new layer
       state = [new_w, new_b, l1.input_size, l2.output_size]
-      new_layer = dynamic_dense(2, 2, self.new_weight_std)
+      new_layer = dynamic_dense(1, 1, self.new_weight_std)
       new_layer.set_state(state)
 
       del self.layers[nl]
@@ -229,7 +231,7 @@ def network_update_step(data_batch, loss_function, dense_model,
   
   # Get the current loss, including the weight penalty
   loss1 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()
-  
+
   # Make note of the current state
   initial_state = dense_model.get_state()
 
@@ -245,10 +247,14 @@ def network_update_step(data_batch, loss_function, dense_model,
     else:
       dense_model.remove_layer()
 
+
   # Calculate the loss in the new network
   loss2 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()
   # and the change in the loss
   dloss = loss2-loss1
+
+  #dense_model.summary()
+  #print(dloss.numpy(), loss1.numpy(), loss2.numpy())
 
   # If the loss increases, return to the original state
   if dloss > 0 :

@@ -93,10 +93,10 @@ def gradient_train_step(data):
   trainable_variables = [conv_filter_1, conv_filter_2, conv_filter_3] + dense_model.trainable_variables()
 
   with tf.GradientTape() as tape:
-    tape.watch(trainable_variables)
     loss = compute_loss(data)
 
   gradients = tape.gradient(loss, trainable_variables)
+  
   optimizer.apply_gradients(zip(gradients, trainable_variables))
   return loss
 
