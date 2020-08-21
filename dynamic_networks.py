@@ -15,11 +15,24 @@ class dynamic_dense():
 
   ### Create the layer with a given initial configuration.
   def __init__(self, input_size, output_size, new_weight_std = 0.1):
-    self.w = tf.Variable(tf.random.normal((input_size, output_size), stddev=0.1), trainable=True)
-    self.b = tf.Variable(tf.random.normal((output_size,), stddev=0.1), trainable=True)
-    self.input_size = input_size
-    self.output_size = output_size
-    self.new_weight_std = 0.01
+    if input_size is not None:
+      self.w = tf.Variable(tf.random.normal((input_size, output_size), stddev=0.1), trainable=True)
+      self.b = tf.Variable(tf.random.normal((output_size,), stddev=0.1), trainable=True)
+      self.input_size = input_size
+      self.output_size = output_size
+      self.new_weight_std = 0.01
+
+  ### Initialize from state tuple (or list)
+  @classmethod
+  def from_state(cls, state, new_weight_std = 0.1):
+    obj = cls(None, None)
+    obj.w = state[0]
+    obj.b = state[1]
+    obj.input_size = state[2]
+    obj.output_size = state[3]
+    obj.new_weight_std = 0.01
+    return obj
+
 
   ### Add a random output feature
   def expand_out(self):
@@ -127,10 +140,9 @@ class dynamic_dense_model():
 
     # Build an intermediate layer. Start close to one
     stdiv = self.new_weight_std/(l1.output_size)
-    new_layer = dynamic_dense(l1.output_size, l1.output_size, self.new_weight_std)
     new_w = tf.Variable(tf.eye(l1.output_size)+tf.random.normal((l1.output_size, l1.output_size), stddev=stdiv), trainable=True)
     new_b = tf.Variable(tf.random.normal((l1.output_size,), stddev=stdiv), trainable=True)
-    new_layer.set_state((new_w, new_b, l1.output_size, l1.output_size))
+    new_layer = dynamic_dense.from_state((new_w, new_b, l1.output_size, l1.output_size))
     self.layers.insert(nl+1, new_layer)
 
   ### Remove a random feature
@@ -169,8 +181,7 @@ class dynamic_dense_model():
 
       # Build the new layer
       state = [new_w, new_b, l1.input_size, l2.output_size]
-      new_layer = dynamic_dense(1, 1, self.new_weight_std)
-      new_layer.set_state(state)
+      new_layer = dynamic_dense.from_state(state)
 
       del self.layers[nl]
       del self.layers[nl]
@@ -188,9 +199,7 @@ class dynamic_dense_model():
   def set_state(self, state):
     self.layers = []
     for layer_state in state:
-      layer = dynamic_dense(1, 1, self.new_weight_std)
-      layer.set_state(layer_state)
-      self.layers += [layer]
+      self.layers += [dynamic_dense.from_state(layer_state)]
 
   def assert_consistency(self):
     previous_size = self.input_size
