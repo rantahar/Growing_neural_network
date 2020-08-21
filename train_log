@@ -1,91 +1,209 @@
-Layer 0: (1024,1),  number weights 1025
-Layer 1: (1,1),  number weights 2
-Layer 2: (1,10),  number weights 20
-Epoch 1 done in 14.503735780715942 seconds, loss 2.240127727508545, validation loss 2.124077327251434
-Layer 0: (1024,4),  number weights 4100
-Layer 1: (4,10),  number weights 50
-Epoch 2 done in 11.078686952590942 seconds, loss 1.7806365053653717, validation loss 1.6224168264865875
-Layer 0: (1024,5),  number weights 5125
-Layer 1: (5,10),  number weights 60
-Epoch 3 done in 11.179463148117065 seconds, loss 1.5356463284492492, validation loss 1.4808376967906953
+Layer 0: (1024,7),  number weights 7175
+Layer 1: (7,10),  number weights 80
+Layer 2: (10,10),  number weights 110
+Epoch 1 done in 17.07369875907898 seconds, loss 1.8975129883289337, validation loss 1.6772191715240479
+Layer 0: (1024,7),  number weights 7175
+Layer 1: (7,11),  number weights 88
+Layer 2: (11,10),  number weights 120
+Epoch 2 done in 17.336907863616943 seconds, loss 1.603666211605072, validation loss 1.5568958353996276
 Layer 0: (1024,9),  number weights 9225
-Layer 1: (9,10),  number weights 100
-Epoch 4 done in 11.42992377281189 seconds, loss 1.39142489695549, validation loss 1.3332507026195526
+Layer 1: (9,13),  number weights 130
+Layer 2: (13,10),  number weights 140
+Epoch 3 done in 20.525525093078613 seconds, loss 1.4631980531215667, validation loss 1.4047335624694826
+Layer 0: (1024,11),  number weights 11275
+Layer 1: (11,14),  number weights 168
+Layer 2: (14,10),  number weights 150
+Epoch 4 done in 19.644733428955078 seconds, loss 1.3471263647079468, validation loss 1.290938744544983
 Layer 0: (1024,12),  number weights 12300
-Layer 1: (12,10),  number weights 130
-Epoch 5 done in 11.254745721817017 seconds, loss 1.2779858635663985, validation loss 1.2354605543613435
-Layer 0: (1024,14),  number weights 14350
-Layer 1: (14,10),  number weights 150
-Epoch 6 done in 11.108314752578735 seconds, loss 1.1964935646057129, validation loss 1.1909169089794158
-Layer 0: (1024,15),  number weights 15375
-Layer 1: (15,10),  number weights 160
-Epoch 7 done in 11.327217817306519 seconds, loss 1.1262387800216676, validation loss 1.167412379384041
+Layer 1: (12,18),  number weights 234
+Layer 2: (18,10),  number weights 190
+Epoch 5 done in 19.37976360321045 seconds, loss 1.2589038118124007, validation loss 1.2483312928676606
+Layer 0: (1024,12),  number weights 12300
+Layer 1: (12,20),  number weights 260
+Layer 2: (20,10),  number weights 210
+Epoch 6 done in 18.924183130264282 seconds, loss 1.1798713307380677, validation loss 1.2061391878128052
 Layer 0: (1024,13),  number weights 13325
-Layer 1: (13,10),  number weights 140
-Epoch 8 done in 11.222461938858032 seconds, loss 1.0722374366521836, validation loss 1.1300896883010865
-Layer 0: (1024,17),  number weights 17425
-Layer 1: (17,10),  number weights 180
-Epoch 9 done in 11.297685146331787 seconds, loss 1.0182503081560135, validation loss 1.0917866271734238
-Layer 0: (1024,20),  number weights 20500
-Layer 1: (20,10),  number weights 210
-Epoch 10 done in 11.322357654571533 seconds, loss 0.9791083174943924, validation loss 1.1046866714954378
-Layer 0: (1024,21),  number weights 21525
-Layer 1: (21,10),  number weights 220
-Epoch 11 done in 11.139580011367798 seconds, loss 0.9395052905082703, validation loss 1.0584932857751848
-Layer 0: (1024,25),  number weights 25625
-Layer 1: (25,10),  number weights 260
-Epoch 12 done in 11.146003007888794 seconds, loss 0.9077679864168168, validation loss 1.0756305301189424
-Layer 0: (1024,27),  number weights 27675
-Layer 1: (27,10),  number weights 280
-Epoch 13 done in 11.47393536567688 seconds, loss 0.8723051500320435, validation loss 1.0760486787557602
-Layer 0: (1024,30),  number weights 30750
-Layer 1: (30,10),  number weights 310
-Epoch 14 done in 11.364180326461792 seconds, loss 0.8391038687229156, validation loss 1.065554529428482
-Layer 0: (1024,29),  number weights 29725
-Layer 1: (29,10),  number weights 300
-Epoch 15 done in 11.356339454650879 seconds, loss 0.8176394609212876, validation loss 1.07213796377182
-Layer 0: (1024,28),  number weights 28700
-Layer 1: (28,10),  number weights 290
-Epoch 16 done in 11.15377140045166 seconds, loss 0.7812784349918366, validation loss 1.0777740424871445
-Layer 0: (1024,31),  number weights 31775
-Layer 1: (31,10),  number weights 320
-Epoch 17 done in 11.234248876571655 seconds, loss 0.7507138831019402, validation loss 1.0892766499519348
-Layer 0: (1024,33),  number weights 33825
-Layer 1: (33,10),  number weights 340
-Epoch 18 done in 11.52457308769226 seconds, loss 0.7220265024900436, validation loss 1.0759637123346328
-Layer 0: (1024,35),  number weights 35875
-Layer 1: (35,10),  number weights 360
-Epoch 19 done in 11.350764751434326 seconds, loss 0.694364413201809, validation loss 1.1101602417230607
-Layer 0: (1024,38),  number weights 38950
-Layer 1: (38,10),  number weights 390
-Epoch 20 done in 11.492471694946289 seconds, loss 0.6671029729247093, validation loss 1.084587455391884
-Layer 0: (1024,39),  number weights 39975
-Layer 1: (39,10),  number weights 400
-Epoch 21 done in 11.315783023834229 seconds, loss 0.6443024367690087, validation loss 1.1208817315101625
-Layer 0: (1024,42),  number weights 43050
-Layer 1: (42,10),  number weights 430
-Epoch 22 done in 11.316971063613892 seconds, loss 0.6171786549687386, validation loss 1.1393376153707504
-Layer 0: (1024,43),  number weights 44075
-Layer 1: (43,10),  number weights 440
-Epoch 23 done in 11.527928113937378 seconds, loss 0.5879198311567306, validation loss 1.166004965901375
-Layer 0: (1024,47),  number weights 48175
-Layer 1: (47,10),  number weights 480
-Epoch 24 done in 11.372582912445068 seconds, loss 0.5685409366488456, validation loss 1.1845047914981843
-Layer 0: (1024,51),  number weights 52275
-Layer 1: (51,10),  number weights 520
-Epoch 25 done in 11.48103666305542 seconds, loss 0.5394392768144608, validation loss 1.2451707154512406
-Layer 0: (1024,56),  number weights 57400
-Layer 1: (56,10),  number weights 570
-Epoch 26 done in 11.963923454284668 seconds, loss 0.5154541826546192, validation loss 1.331586019396782
-Layer 0: (1024,56),  number weights 57400
-Layer 1: (56,10),  number weights 570
-Epoch 27 done in 11.707781314849854 seconds, loss 0.5193064895868301, validation loss 1.3170973777770996
-Layer 0: (1024,56),  number weights 57400
-Layer 1: (56,10),  number weights 570
-Epoch 28 done in 11.369628429412842 seconds, loss 0.4905527324974537, validation loss 1.3790302824974061
-Layer 0: (1024,54),  number weights 55350
-Layer 1: (54,10),  number weights 550
-Epoch 29 done in 11.429641008377075 seconds, loss 0.4922059296667576, validation loss 1.369583961367607
-Layer 0: (1024,51),  number weights 52275
-Layer 1: (51,10),  number weights 520
-Epoch 30 done in 11.342142343521118 seconds, loss 0.4586965530514717, validation loss 1.3765739744901657
+Layer 1: (13,23),  number weights 322
+Layer 2: (23,10),  number weights 240
+Epoch 7 done in 18.56672477722168 seconds, loss 1.1365289011001587, validation loss 1.184772825241089
+Layer 0: (1024,11),  number weights 11275
+Layer 1: (11,24),  number weights 288
+Layer 2: (24,10),  number weights 250
+Epoch 8 done in 17.896583795547485 seconds, loss 1.0955239969491959, validation loss 1.144746391773224
+Layer 0: (1024,13),  number weights 13325
+Layer 1: (13,25),  number weights 350
+Layer 2: (25,25),  number weights 650
+Layer 3: (25,10),  number weights 260
+Epoch 9 done in 19.942941188812256 seconds, loss 1.0607794553041459, validation loss 1.1907210010290146
+Layer 0: (1024,12),  number weights 12300
+Layer 1: (12,24),  number weights 312
+Layer 2: (24,24),  number weights 600
+Layer 3: (24,10),  number weights 250
+Epoch 10 done in 19.381149768829346 seconds, loss 1.026265638589859, validation loss 1.1371434885263443
+Layer 0: (1024,9),  number weights 9225
+Layer 1: (9,26),  number weights 260
+Layer 2: (26,26),  number weights 702
+Layer 3: (26,24),  number weights 648
+Layer 4: (24,10),  number weights 250
+Epoch 11 done in 20.325150966644287 seconds, loss 0.9988883278369903, validation loss 1.1385839569568634
+Layer 0: (1024,9),  number weights 9225
+Layer 1: (9,26),  number weights 260
+Layer 2: (26,26),  number weights 702
+Layer 3: (26,24),  number weights 648
+Layer 4: (24,10),  number weights 250
+Epoch 12 done in 20.45835828781128 seconds, loss 0.9472435002326965, validation loss 1.1159630888700485
+Layer 0: (1024,9),  number weights 9225
+Layer 1: (9,26),  number weights 260
+Layer 2: (26,27),  number weights 729
+Layer 3: (27,25),  number weights 700
+Layer 4: (25,25),  number weights 650
+Layer 5: (25,10),  number weights 260
+Epoch 13 done in 22.095572471618652 seconds, loss 0.9277857923507691, validation loss 1.1272825360298158
+Layer 0: (1024,9),  number weights 9225
+Layer 1: (9,27),  number weights 270
+Layer 2: (27,27),  number weights 756
+Layer 3: (27,25),  number weights 700
+Layer 4: (25,25),  number weights 650
+Layer 5: (25,10),  number weights 260
+Epoch 14 done in 21.62387466430664 seconds, loss 0.8939651651382446, validation loss 1.0995355373620987
+Layer 0: (1024,9),  number weights 9225
+Layer 1: (9,28),  number weights 280
+Layer 2: (28,28),  number weights 812
+Layer 3: (28,26),  number weights 754
+Layer 4: (26,26),  number weights 702
+Layer 5: (26,10),  number weights 270
+Epoch 15 done in 21.109394788742065 seconds, loss 0.8834732683897019, validation loss 1.1447002637386323
+Layer 0: (1024,8),  number weights 8200
+Layer 1: (8,9),  number weights 81
+Layer 2: (9,28),  number weights 280
+Layer 3: (28,28),  number weights 812
+Layer 4: (28,26),  number weights 754
+Layer 5: (26,26),  number weights 702
+Layer 6: (26,10),  number weights 270
+Epoch 16 done in 21.06793975830078 seconds, loss 0.8760865889787675, validation loss 1.1079041731357575
+Layer 0: (1024,9),  number weights 9225
+Layer 1: (9,28),  number weights 280
+Layer 2: (28,28),  number weights 812
+Layer 3: (28,26),  number weights 754
+Layer 4: (26,26),  number weights 702
+Layer 5: (26,10),  number weights 270
+Epoch 17 done in 20.960583925247192 seconds, loss 0.8498810317516327, validation loss 1.1063928747177125
+Layer 0: (1024,9),  number weights 9225
+Layer 1: (9,28),  number weights 280
+Layer 2: (28,28),  number weights 812
+Layer 3: (28,28),  number weights 812
+Layer 4: (28,28),  number weights 812
+Layer 5: (28,26),  number weights 754
+Layer 6: (26,26),  number weights 702
+Layer 7: (26,10),  number weights 270
+Epoch 18 done in 21.993629693984985 seconds, loss 0.8077755892276764, validation loss 1.1033054441213608
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,28),  number weights 308
+Layer 2: (28,28),  number weights 812
+Layer 3: (28,29),  number weights 841
+Layer 4: (29,28),  number weights 840
+Layer 5: (28,25),  number weights 725
+Layer 6: (25,27),  number weights 702
+Layer 7: (27,10),  number weights 280
+Epoch 19 done in 21.88041663169861 seconds, loss 0.8325355579853058, validation loss 1.1452568006515502
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,28),  number weights 308
+Layer 2: (28,28),  number weights 812
+Layer 3: (28,30),  number weights 870
+Layer 4: (30,28),  number weights 868
+Layer 5: (28,25),  number weights 725
+Layer 6: (25,26),  number weights 676
+Layer 7: (26,10),  number weights 270
+Epoch 20 done in 21.383875131607056 seconds, loss 0.7791775594949722, validation loss 1.1266608053445817
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,28),  number weights 308
+Layer 2: (28,29),  number weights 841
+Layer 3: (29,30),  number weights 900
+Layer 4: (30,29),  number weights 899
+Layer 5: (29,25),  number weights 750
+Layer 6: (25,26),  number weights 676
+Layer 7: (26,10),  number weights 270
+Epoch 21 done in 22.616788625717163 seconds, loss 0.7577272893190384, validation loss 1.1458747619390488
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,27),  number weights 297
+Layer 2: (27,29),  number weights 812
+Layer 3: (29,29),  number weights 870
+Layer 4: (29,30),  number weights 900
+Layer 5: (30,25),  number weights 775
+Layer 6: (25,26),  number weights 676
+Layer 7: (26,10),  number weights 270
+Epoch 22 done in 20.300360441207886 seconds, loss 0.7499541774392128, validation loss 1.1858414763212204
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,27),  number weights 297
+Layer 2: (27,29),  number weights 812
+Layer 3: (29,29),  number weights 870
+Layer 4: (29,31),  number weights 930
+Layer 5: (31,25),  number weights 800
+Layer 6: (25,26),  number weights 676
+Layer 7: (26,10),  number weights 270
+Epoch 23 done in 20.336702585220337 seconds, loss 0.7173257545232773, validation loss 1.137586813569069
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,27),  number weights 297
+Layer 2: (27,29),  number weights 812
+Layer 3: (29,28),  number weights 840
+Layer 4: (28,31),  number weights 899
+Layer 5: (31,26),  number weights 832
+Layer 6: (26,26),  number weights 702
+Layer 7: (26,10),  number weights 270
+Epoch 24 done in 21.195409059524536 seconds, loss 0.7091880587339401, validation loss 1.1878046524524688
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,27),  number weights 297
+Layer 2: (27,29),  number weights 812
+Layer 3: (29,28),  number weights 840
+Layer 4: (28,32),  number weights 928
+Layer 5: (32,26),  number weights 858
+Layer 6: (26,26),  number weights 702
+Layer 7: (26,10),  number weights 270
+Epoch 25 done in 21.538164377212524 seconds, loss 0.6854282054901123, validation loss 1.1623508954048156
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,27),  number weights 297
+Layer 2: (27,30),  number weights 840
+Layer 3: (30,28),  number weights 868
+Layer 4: (28,32),  number weights 928
+Layer 5: (32,27),  number weights 891
+Layer 6: (27,26),  number weights 728
+Layer 7: (26,10),  number weights 270
+Epoch 26 done in 20.653250694274902 seconds, loss 0.676448688864708, validation loss 1.17215511739254
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,28),  number weights 308
+Layer 2: (28,30),  number weights 870
+Layer 3: (30,28),  number weights 868
+Layer 4: (28,32),  number weights 928
+Layer 5: (32,27),  number weights 891
+Layer 6: (27,25),  number weights 700
+Layer 7: (25,10),  number weights 260
+Epoch 27 done in 23.817965030670166 seconds, loss 0.7006079840064049, validation loss 1.1826587653160094
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,27),  number weights 297
+Layer 2: (27,31),  number weights 868
+Layer 3: (31,28),  number weights 896
+Layer 4: (28,32),  number weights 928
+Layer 5: (32,27),  number weights 891
+Layer 6: (27,25),  number weights 700
+Layer 7: (25,10),  number weights 260
+Epoch 28 done in 22.59149956703186 seconds, loss 0.6572114885449409, validation loss 1.2390915089845658
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,28),  number weights 308
+Layer 2: (28,31),  number weights 899
+Layer 3: (31,33),  number weights 1056
+Layer 4: (33,28),  number weights 952
+Layer 5: (28,34),  number weights 986
+Layer 6: (34,27),  number weights 945
+Layer 7: (27,25),  number weights 700
+Layer 8: (25,10),  number weights 260
+Epoch 29 done in 22.72428059577942 seconds, loss 0.646802932202816, validation loss 1.2610931944847108
+Layer 0: (1024,10),  number weights 10250
+Layer 1: (10,28),  number weights 308
+Layer 2: (28,32),  number weights 928
+Layer 3: (32,33),  number weights 1089
+Layer 4: (33,28),  number weights 952
+Layer 5: (28,34),  number weights 986
+Layer 6: (34,27),  number weights 945
+Layer 7: (27,25),  number weights 700
+Layer 8: (25,10),  number weights 260
+Epoch 30 done in 23.69038152694702 seconds, loss 0.622645781159401, validation loss 1.2387689501047134
