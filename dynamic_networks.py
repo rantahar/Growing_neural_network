@@ -103,8 +103,9 @@ class dynamic_dense_model():
       tf.Variable(tf.random.normal((3, 3, 64, 64), stddev=0.1), dtype=tf.float32)
     ]
 
-    # Input layer
-    self.layers = [dynamic_dense(input_size, intermediate_layer_size, new_weight_std)]
+    # The first fully connected layer
+    connected_input_size = int(input_size[0]*input_size[1]*64 / (4**len(self.conv_w)))
+    self.layers = [dynamic_dense(connected_input_size, intermediate_layer_size, new_weight_std)]
 
     # Intermediate layers
     for n in range(intermediate_layers):
@@ -112,8 +113,10 @@ class dynamic_dense_model():
     
     # Output layer
     self.layers += [dynamic_dense(intermediate_layer_size, output_size, new_weight_std)]
+
+    # Variables related to fully connected part
     self.new_weight_std = new_weight_std
-    self.input_size = input_size
+    self.connected_input_size = connected_input_size
     self.output_size = output_size
     self.activation = activation
 
@@ -210,7 +213,7 @@ class dynamic_dense_model():
       self.layers += [dynamic_dense.from_state(layer_state)]
 
   def assert_consistency(self):
-    previous_size = self.input_size
+    previous_size = self.connected_input_size
     for l in self.layers:
       assert(l.input_size == previous_size)
       assert(l.input_size == l.w.shape[0])
