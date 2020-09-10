@@ -95,6 +95,12 @@ class dynamic_dense_model():
   ### Create the initial model configuration.
   def __init__(self, input_size, output_size, intermediate_layers=0, intermediate_layer_size=8,
                new_weight_std = 0.1, activation = tf.nn.relu):
+
+    ### Create kernels for the convolutions
+    self.conv_1 = tf.Variable(tf.random.normal((3, 3,  3, 32), stddev=0.1), dtype=tf.float32)
+    self.conv_2 = tf.Variable(tf.random.normal((3, 3, 32, 64), stddev=0.1), dtype=tf.float32)
+    self.conv_3 = tf.Variable(tf.random.normal((3, 3, 64, 64), stddev=0.1), dtype=tf.float32)
+
     # Input layer
     self.layers = [dynamic_dense(input_size, intermediate_layer_size, new_weight_std)]
 
@@ -189,7 +195,9 @@ class dynamic_dense_model():
   
   ### Returns a list of trainable variables
   def trainable_variables(self):
-    return [var for l in self.layers for var in l.trainable_variables()]
+    conv_vars = [self.conv_1, self.conv_2, self.conv_3]
+    vars = conv_vars + [var for l in self.layers for var in l.trainable_variables()]
+    return vars
   
   ### Returns the current state of the model
   def get_state(self):
@@ -215,6 +223,14 @@ class dynamic_dense_model():
   ### Apply the model
   def __call__(self, inputs):
     x = inputs
+    x = tf.nn.conv2d(x, self.conv_1, 2, "SAME")
+    x = self.activation(x)
+    x = tf.nn.conv2d(x, self.conv_2, 2, "SAME")
+    x = self.activation(x)
+    x = tf.nn.conv2d(x, self.conv_3, 2, "SAME")
+    x = self.activation(x)
+    x = tf.reshape(x, (x.shape[0], -1))
+    # 1024
     for l in self.layers[:-1]:
       x = l(x)
       x = self.activation(x)

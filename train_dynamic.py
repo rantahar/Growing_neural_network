@@ -18,7 +18,7 @@ from dynamic_networks import dynamic_dense_model, network_update_step
 
 
 ### General optimization parameters
-EPOCHS = 30
+EPOCHS = 100
 IMG_SIZE = 32
 batch_size = 100
 
@@ -43,33 +43,9 @@ valid_dataset = tf.data.Dataset.from_tensor_slices(valid_data).shuffle(10000).ba
 
 
 
-### Create kernels for the convolutions
-conv_filter_1 = tf.Variable(tf.random.normal((3, 3,  3, 32), stddev=0.1), dtype=tf.float32)
-conv_filter_2 = tf.Variable(tf.random.normal((3, 3, 32, 64), stddev=0.1), dtype=tf.float32)
-conv_filter_3 = tf.Variable(tf.random.normal((3, 3, 64, 64), stddev=0.1), dtype=tf.float32)
 
 ### Create two dynamic dense layers
-dense_model = dynamic_dense_model(1024, 10, intermediate_layers=1, new_weight_std = new_weight_std)
-
-
-def classifier(inputs):
-  ### Runs the classifier on a batch of images
-  x = inputs
-  # 32, 32, 3
-  x = tf.nn.conv2d(x, conv_filter_1, 2, "SAME")
-  x = tf.nn.leaky_relu(x)
-  # 16, 16, 32
-  x = tf.nn.conv2d(x, conv_filter_2, 2, "SAME")
-  x = tf.nn.leaky_relu(x)
-  # 8, 8, 64
-  x = tf.nn.conv2d(x, conv_filter_3, 2, "SAME")
-  x = tf.nn.leaky_relu(x)
-  # 4, 4, 64
-  x = tf.reshape(x, (x.shape[0], -1))
-  # 1024
-  x = dense_model(x)
-  # 10
-  return x
+classifier = dynamic_dense_model(1024, 10, intermediate_layers=1, new_weight_std = new_weight_std)
 
 
 
@@ -90,7 +66,7 @@ def compute_loss(data):
 optimizer = tf.optimizers.Adam()
 
 def gradient_train_step(data):
-  trainable_variables = [conv_filter_1, conv_filter_2, conv_filter_3] + dense_model.trainable_variables()
+  trainable_variables = classifier.trainable_variables()
 
   with tf.GradientTape() as tape:
     loss = compute_loss(data)
@@ -110,10 +86,10 @@ for epoch in range(1, EPOCHS + 1):
   # Each randomly adds or removes a feature.
   network_changes = 0
   for i, element in enumerate(train_dataset):
-    network_changes += network_update_step(element, compute_loss, dense_model, weight_penalty)
+    network_changes += network_update_step(element, compute_loss, classifier, weight_penalty)
     if i==network_updates_per_epoch:
       break
-  dense_model.summary()
+  classifier.summary()
   
   # Next the standard training step. This runs over all the
   # batches. 
