@@ -214,7 +214,7 @@ class dynamic_model():
   def set_state(self, state):
     self.layers = []
     for layer_state in state:
-      self.layers += [dynamic_dense_layers.from_state(layer_state)]
+      self.layers += [dynamic_dense_layer.from_state(layer_state)]
 
   def assert_consistency(self):
     previous_size = self.connected_input_size
