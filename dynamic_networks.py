@@ -11,7 +11,7 @@ import tensorflow as tf
 import numpy as np
 
 # A single dense layer with dynamic input and output size
-class dynamic_dense():
+class dynamic_dense_layer():
 
   ### Create the layer with a given initial configuration.
   def __init__(self, input_size, output_size, new_weight_std = 0.1):
@@ -89,8 +89,12 @@ class dynamic_dense():
 
 
 
+
+
+
+
 # A model formed of a number of dynamical dense layers
-class dynamic_dense_model():
+class dynamic_model():
   
   ### Create the initial model configuration.
   def __init__(self, input_size, output_size, intermediate_layers=0, intermediate_layer_size=8,
@@ -105,14 +109,14 @@ class dynamic_dense_model():
 
     # The first fully connected layer
     connected_input_size = int(input_size[0]*input_size[1]*64 / (4**len(self.conv_w)))
-    self.layers = [dynamic_dense(connected_input_size, intermediate_layer_size, new_weight_std)]
+    self.layers = [dynamic_dense_layer(connected_input_size, intermediate_layer_size, new_weight_std)]
 
     # Intermediate layers
     for n in range(intermediate_layers):
-      self.layers += [dynamic_dense(intermediate_layer_size, intermediate_layer_size, new_weight_std)]
+      self.layers += [dynamic_dense_layer(intermediate_layer_size, intermediate_layer_size, new_weight_std)]
     
     # Output layer
-    self.layers += [dynamic_dense(intermediate_layer_size, output_size, new_weight_std)]
+    self.layers += [dynamic_dense_layer(intermediate_layer_size, output_size, new_weight_std)]
 
     # Variables related to fully connected part
     self.new_weight_std = new_weight_std
@@ -153,7 +157,7 @@ class dynamic_dense_model():
     stdiv = self.new_weight_std/(l1.output_size)
     new_w = tf.Variable(tf.eye(l1.output_size)+tf.random.normal((l1.output_size, l1.output_size), stddev=stdiv), trainable=True)
     new_b = tf.Variable(tf.random.normal((l1.output_size,), stddev=stdiv), trainable=True)
-    new_layer = dynamic_dense.from_state((new_w, new_b, l1.output_size, l1.output_size))
+    new_layer = dynamic_dense_layer.from_state((new_w, new_b, l1.output_size, l1.output_size))
     self.layers.insert(nl+1, new_layer)
 
   ### Remove a random feature
@@ -192,7 +196,7 @@ class dynamic_dense_model():
 
       # Build the new layer
       state = [new_w, new_b, l1.input_size, l2.output_size]
-      new_layer = dynamic_dense.from_state(state)
+      new_layer = dynamic_dense_layer.from_state(state)
 
       del self.layers[nl]
       del self.layers[nl]
@@ -210,7 +214,7 @@ class dynamic_dense_model():
   def set_state(self, state):
     self.layers = []
     for layer_state in state:
-      self.layers += [dynamic_dense.from_state(layer_state)]
+      self.layers += [dynamic_dense_layers.from_state(layer_state)]
 
   def assert_consistency(self):
     previous_size = self.connected_input_size

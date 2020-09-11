@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import time
 
-from dynamic_networks import dynamic_dense_model, network_update_step
+from dynamic_networks import dynamic_model, network_update_step
 
 #################################################
 # A simple test for training the dynamic network
@@ -45,7 +45,7 @@ valid_dataset = tf.data.Dataset.from_tensor_slices(valid_data).shuffle(10000).ba
 
 
 ### Create two dynamic dense layers
-classifier = dynamic_dense_model((IMG_SIZE,IMG_SIZE,3), 10, intermediate_layers=1, new_weight_std = new_weight_std)
+classifier = dynamic_model((IMG_SIZE,IMG_SIZE,3), 10, intermediate_layers=1, new_weight_std = new_weight_std)
 
 
 
