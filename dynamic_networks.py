@@ -79,7 +79,7 @@ class dynamic_dense_layer():
     self.input_size = state[2]
     self.output_size = state[3]
 
-  ### Call the layer
+  ### Apply the layer
   def __call__(self, inputs):
     assert(self.w.shape == (self.input_size,self.output_size))
     assert(self.b.shape == (self.output_size))
@@ -87,7 +87,67 @@ class dynamic_dense_layer():
 
 
 
+# A convolution layer with dynamic filter size
+class dynamic_conv2d_layer():
 
+  ### Create the layer with a given initial configuration.
+  def __init__(self, width, input_size, output_size, new_weight_std = 0.1):
+    if input_size is not None:
+      self.w = tf.Variable(tf.random.normal((width, width, input_size, output_size), stddev=0.1), trainable=True)
+      self.width = width
+      self.input_size = input_size
+      self.output_size = output_size
+      self.new_weight_std = new_weight_std
+
+  ### Initialize from state tuple (or list)
+  @classmethod
+  def from_state(cls, state, new_weight_std = 0.1):
+    obj = cls(None, None)
+    obj.w = state[0]
+    obj.width = state[1]
+    obj.input_size = state[2]
+    obj.output_size = state[3]
+    obj.new_weight_std = 0.01
+    return obj
+
+
+  ### Add a random output feature
+  def expand_out(self):
+    new_row =  tf.random.normal((self.width, self.width, self.input_size, 1), stddev=self.new_weight_std)
+    new_bias = tf.random.normal((1,), stddev=self.new_weight_std)
+    self.w = tf.Variable(tf.concat([self.w, new_row], 1), trainable=True)
+    self.output_size = self.output_size + 1
+
+  ### Remove a random output feature
+  def contract_out(self, n):
+    if self.output_size > 1:
+      self.w = tf.Variable(tf.concat([self.w[:,:,:,:n], self.w[:,:,:,n+1:]], 3), trainable=True)
+      self.output_size = self.output_size - 1
+
+  ### Add a random input feature
+  def contract_in(self, n):
+    if self.input_size > 1:
+      self.w = tf.Variable(tf.concat([self.w[:,:,:n], self.w[:,:,n+1:]], 0), trainable=True)
+      self.input_size = self.input_size - 1
+
+  ### Remove a random input feature
+  def expand_in(self):
+    new_column = tf.random.normal((1, self.output_size), stddev=self.new_weight_std)
+    self.w = tf.Variable(tf.concat([self.w, new_column], 0), trainable=True)
+    self.input_size = self.input_size + 1
+
+  ### Returns a list of trainable variables
+  def trainable_variables(self):
+    return [self.w]
+  
+  ### Returns the current state of the layer
+  def get_state(self):
+    return (self.w, self.width, self.input_size, self.output_size)
+
+  ### Apply the layer
+  def __call__(self, inputs):
+    assert(self.w.shape == (self.width, self.width, self.input_size,self.output_size))
+    return tf.nn.conv2d(inputs, self.w, 2, "SAME")
 
 
 
@@ -102,9 +162,9 @@ class dynamic_model():
 
     ### Create kernels for the convolutions
     self.conv_w = [ 
-      tf.Variable(tf.random.normal((3, 3,  3, 32), stddev=0.1), dtype=tf.float32),
-      tf.Variable(tf.random.normal((3, 3, 32, 64), stddev=0.1), dtype=tf.float32),
-      tf.Variable(tf.random.normal((3, 3, 64, 64), stddev=0.1), dtype=tf.float32)
+      dynamic_conv2d_layer(3,3,32,0.01),
+      dynamic_conv2d_layer(3,32,64,0.01),
+      dynamic_conv2d_layer(3,64,64,0.01)
     ]
 
     # The first fully connected layer
@@ -204,7 +264,9 @@ class dynamic_model():
   
   ### Returns a list of trainable variables
   def trainable_variables(self):
-    return self.conv_w + [var for l in self.layers for var in l.trainable_variables()]
+    conv_layers = [var for l in self.conv_w for var in l.trainable_variables()]
+    dense_layers = [var for l in self.layers for var in l.trainable_variables()]
+    return conv_layers + dense_layers
   
   ### Returns the current state of the model
   def get_state(self):
@@ -230,8 +292,8 @@ class dynamic_model():
   ### Apply the model
   def __call__(self, inputs):
     x = inputs
-    for conv_w in self.conv_w:
-      x = tf.nn.conv2d(x, conv_w, 2, "SAME")
+    for l in self.conv_w:
+      x = l(x)
       x = self.activation(x)
     x = tf.reshape(x, (x.shape[0], -1))
     for l in self.layers[:-1]:
