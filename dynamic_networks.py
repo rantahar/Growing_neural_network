@@ -20,7 +20,7 @@ class dynamic_dense_layer():
       self.b = tf.Variable(tf.random.normal((output_size,), stddev=0.1), trainable=True)
       self.input_size = input_size
       self.output_size = output_size
-      self.new_weight_std = 0.01
+      self.new_weight_std = new_weight_std
 
   ### Initialize from state tuple (or list)
   @classmethod
