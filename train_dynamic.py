@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import time
 
-from dynamic_networks import dynamic_model, network_update_step
+from dynamic_networks import dynamic_model
 
 #################################################
 # A simple test for training the dynamic network
@@ -86,7 +86,7 @@ for epoch in range(1, EPOCHS + 1):
   # Each randomly adds or removes a feature.
   network_changes = 0
   for i, element in enumerate(train_dataset):
-    network_changes += network_update_step(element, compute_loss, classifier, weight_penalty)
+    network_changes += classifier.update_features(element, compute_loss, weight_penalty)
     if i==network_updates_per_epoch:
       break
   classifier.summary()

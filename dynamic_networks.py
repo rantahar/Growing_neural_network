@@ -50,16 +50,16 @@ class dynamic_dense_layer():
       self.output_size = self.output_size - 1
 
   ### Add a random input feature
-  def contract_in(self, n):
-    if self.input_size > 1:
-      self.w = tf.Variable(tf.concat([self.w[:n], self.w[n+1:]], 0), trainable=True)
-      self.input_size = self.input_size - 1
-
-  ### Remove a random input feature
   def expand_in(self):
     new_column = tf.random.normal((1, self.output_size), stddev=self.new_weight_std)
     self.w = tf.Variable(tf.concat([self.w, new_column], 0), trainable=True)
     self.input_size = self.input_size + 1
+
+  ### Remove a random input feature
+  def contract_in(self, n):
+    if self.input_size > 1:
+      self.w = tf.Variable(tf.concat([self.w[:n], self.w[n+1:]], 0), trainable=True)
+      self.input_size = self.input_size - 1
 
   ### Returns a list of trainable variables
   def trainable_variables(self):
@@ -68,7 +68,7 @@ class dynamic_dense_layer():
   ### Returns the current state of the layer
   def get_state(self):
     return (self.w, self.b, self.input_size, self.output_size)
-  
+
   ### Overwrite the current state of the layer with
   # the given state
   def set_state(self, state):
@@ -202,23 +202,11 @@ class dynamic_model():
     nl = (int)((len(self.layers)-1)*np.random.rand())
     l1 = self.layers[nl]
     l2 = self.layers[nl+1]
+
     # Expand the number of outputs in the layer
     # and the number of inputs in the next one
     l1.expand_out()
     l2.expand_in()
-
-  ### Add a layer
-  def add_layer(self):
-    # Pick a layer
-    nl = (int)((len(self.layers)-1)*np.random.rand())
-    l1 = self.layers[nl]
-
-    # Build an intermediate layer. Start close to one
-    stdiv = self.new_weight_std/(l1.output_size)
-    new_w = tf.Variable(tf.eye(l1.output_size)+tf.random.normal((l1.output_size, l1.output_size), stddev=stdiv), trainable=True)
-    new_b = tf.Variable(tf.random.normal((l1.output_size,), stddev=stdiv), trainable=True)
-    new_layer = dynamic_dense_layer.from_state((new_w, new_b, l1.output_size, l1.output_size))
-    self.layers.insert(nl+1, new_layer)
 
   ### Remove a random feature
   def contract(self):
@@ -229,39 +217,37 @@ class dynamic_model():
 
     # Choose a random feature
     n = (int)(self.layers[0].output_size*np.random.rand())
+
     # remove it from both the layer and the next one
     l1.contract_out(n)
     l2.contract_in(n)
 
-  ### Remove a layer
-  # Achieves this by removing the activation step between
-  # two layers, producing a linear operation
-  def remove_layer(self):
-    if len(self.layers) > 2:
-      # Pick a layer
-      nl = (int)((len(self.layers)-1)*np.random.rand())
-  
-      # Just drop the activation between the layer and the next,
-      # reducing them to a single linear operation
-      l1 = self.layers[nl]
-      l2 = self.layers[nl+1]
+  ### Stochastic update: add or remove a feature if it
+  ### decreases the loss function
+  def update_features(self, data, loss_function, weight_penalty = 1e-9, layer_change_rate = 0.1):
+    # Get the current loss, including the weight penalty
+    initial_loss = loss_function(data) + weight_penalty*self.weight_count()
+    # Make note of the current state
+    initial_state = self.get_state()
+    # Randomly choose wether to add or remove
+    if np.random.rand() > 0.5:
+      self.expand()
+    else:
+      self.contract()
+    # Calculate the loss in the new network
+    new_loss = loss_function(data) + weight_penalty*self.weight_count()
+    # and the change in the loss
+    dloss = new_loss-initial_loss
+    # If the loss increases, return to the original state
+    if dloss > 0 :
+      self.set_state(initial_state)
+      accepted = False
+    else:
+      accepted = True
 
-      # Pull the states of the two layers and construct new variables
-      st1 = l1.get_state()
-      st2 = l2.get_state()
-      new_w = tf.Variable(tf.matmul(st1[0],st2[0]), trainable=True)
-      new_b = tf.Variable(tf.matmul(tf.expand_dims(st1[1],0),st2[0])[0,:] + st2[1], trainable=True)
+    self.assert_consistency()
+    return accepted
 
-      assert(new_w.shape == (l1.input_size, l2.output_size))
-
-      # Build the new layer
-      state = [new_w, new_b, l1.input_size, l2.output_size]
-      new_layer = dynamic_dense_layer.from_state(state)
-
-      del self.layers[nl]
-      del self.layers[nl]
-      self.layers.insert(nl, new_layer)
-  
   ### Returns a list of trainable variables
   def trainable_variables(self):
     conv_layers = [var for l in self.conv_w for var in l.trainable_variables()]
@@ -303,59 +289,51 @@ class dynamic_model():
     return x
 
 
+  #-------------------------------
+  # Add or remove dense layers
+  #-------------------------------
 
+  ### Add a layer
+  def add_layer(self):
+    # Pick a layer
+    nl = (int)((len(self.layers)-1)*np.random.rand())
+    l1 = self.layers[nl]
 
-### Add and/or remove features between two dynamic layers
-# Either attempts to add or remove a feature.
-#
-# Add: When a feature is added, the weights are drawn
-#      randomly. The new feature is kept if it reduces the
-#      loss on the current data batch
-#
-# Remove: A random feature is chosen. It is removed if this
-#         reduces the loss on the current data batch
-#
-def network_update_step(data_batch, loss_function, dense_model, 
-                        weight_penalty = 1e-9, layer_change_rate = 0.1
-                       ):
+    # Build an intermediate layer. Start close to one
+    stdiv = self.new_weight_std/(l1.output_size)
+    new_w = tf.Variable(tf.eye(l1.output_size)+tf.random.normal((l1.output_size, l1.output_size), stddev=stdiv), trainable=True)
+    new_b = tf.Variable(tf.random.normal((l1.output_size,), stddev=stdiv), trainable=True)
+    new_layer = dynamic_dense_layer.from_state((new_w, new_b, l1.output_size, l1.output_size))
+    self.layers.insert(nl+1, new_layer)
   
-  # Get the current loss, including the weight penalty
-  loss1 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()
-
-  # Make note of the current state
-  initial_state = dense_model.get_state()
-
-  # Randomly choose wether to add or remove
-  if np.random.rand() > 0.5:
-    if np.random.rand() > layer_change_rate:
-      dense_model.expand()
-    else:
-      dense_model.add_layer()
-  else:
-    if np.random.rand() > layer_change_rate:
-      dense_model.contract()
-    else:
-      dense_model.remove_layer()
-
-
-  # Calculate the loss in the new network
-  loss2 = loss_function(data_batch) + weight_penalty*dense_model.weight_count()
-  # and the change in the loss
-  dloss = loss2-loss1
-
-  #dense_model.summary()
-  #print(dloss.numpy(), loss1.numpy(), loss2.numpy())
-
-  # If the loss increases, return to the original state
-  if dloss > 0 :
-    dense_model.set_state(initial_state)
-    accepted = False
-  else:
-    accepted = True
-
-  dense_model.assert_consistency()
+  ### Remove a layer
+  # Achieves this by removing the activation step between
+  # two layers, producing a linear operation
+  def remove_layer(self):
+    if len(self.layers) > 2:
+      # Pick a layer
+      nl = (int)((len(self.layers)-1)*np.random.rand())
   
-  return accepted
+      # Just drop the activation between the layer and the next,
+      # reducing them to a single linear operation
+      l1 = self.layers[nl]
+      l2 = self.layers[nl+1]
+
+      # Pull the states of the two layers and construct new variables
+      st1 = l1.get_state()
+      st2 = l2.get_state()
+      new_w = tf.Variable(tf.matmul(st1[0],st2[0]), trainable=True)
+      new_b = tf.Variable(tf.matmul(tf.expand_dims(st1[1],0),st2[0])[0,:] + st2[1], trainable=True)
+
+      assert(new_w.shape == (l1.input_size, l2.output_size))
+
+      # Build the new layer
+      state = [new_w, new_b, l1.input_size, l2.output_size]
+      new_layer = dynamic_dense_layer.from_state(state)
+
+      del self.layers[nl]
+      del self.layers[nl]
+      self.layers.insert(nl, new_layer)
 
 
 
