@@ -181,18 +181,10 @@ class dynamic_conv2d_layer():
 class dynamic_model():
   
   ### Create the initial model configuration.
-  def __init__(self, input_shape, new_weight_std = 0.1, activation = tf.nn.relu):
+  def __init__(self, layers, new_weight_std = 0.1, activation = tf.nn.relu):
 
     ### Remember the list of layers
-    self.layers = [
-        dynamic_conv2d_layer(3,3,4,0.01),
-        dynamic_conv2d_layer(3,4,4,0.01),
-        dynamic_conv2d_layer(3,4,4,0.01),
-        tf.keras.layers.Flatten(),
-        dynamic_dense_layer(4*4*4, 4, new_weight_std),
-        dynamic_dense_layer(4, 4, new_weight_std),
-        dynamic_dense_layer(4, 10, new_weight_std)
-      ]
+    self.layers = layers
     
     self.adjustable_layers = []
     for l in self.layers:
