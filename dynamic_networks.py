@@ -178,6 +178,27 @@ class dynamic_conv2d_layer():
 
 
 
+# Flattens the output of a conv2d layer and allows adding neurons correctly in
+# between
+class dynamic_conv2d_to_dense_layer():
+
+  ### Create the layer with a given initial configuration.
+  def __init__(self, dense_layer):
+    if input_size is not None:
+      self.dynamic_input = True
+      self.dynamic_output = False
+      
+  ### An output feature of the conv2 layer has been removed. Remove corresponding
+  ### weights from the input of the following dense layer 
+  def contract_in(self, n):
+    pass
+
+  ### Add a random input feature
+  def expand_in(self):
+    pass
+
+
+
 
 # A model formed of a number of dynamical dense layers
 class dynamic_model():

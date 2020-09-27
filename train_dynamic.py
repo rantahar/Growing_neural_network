@@ -50,9 +50,9 @@ layers = [
         dynamic_conv2d_layer(3,32,32,0.01),
         dynamic_conv2d_layer(3,32,32,0.01),
         tf.keras.layers.Flatten(),
-        dynamic_dense_layer(4*4*32, 4, new_weight_std),
-        dynamic_dense_layer(4, 4, new_weight_std),
-        dynamic_dense_layer(4, 10, new_weight_std)
+        dynamic_dense_layer(4*4*32, 10, new_weight_std),
+        dynamic_dense_layer(10, 10, new_weight_std),
+        dynamic_dense_layer(10, 10, new_weight_std)
       ]
 classifier = dynamic_model(layers, new_weight_std = new_weight_std)
 
