@@ -45,7 +45,7 @@ valid_dataset = tf.data.Dataset.from_tensor_slices(valid_data).shuffle(10000).ba
 
 
 ### Create two dynamic dense layers
-classifier = dynamic_model((IMG_SIZE,IMG_SIZE,3), 10, intermediate_layers=1, new_weight_std = new_weight_std)
+classifier = dynamic_model((32, 32, 3), new_weight_std = new_weight_std)
 
 
 

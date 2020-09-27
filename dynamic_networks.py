@@ -18,6 +18,7 @@ class dynamic_dense_layer():
     if input_size is not None:
       self.w = tf.Variable(tf.random.normal((input_size, output_size), stddev=0.1), trainable=True)
       self.b = tf.Variable(tf.random.normal((output_size,), stddev=0.1), trainable=True)
+      self.dynamic = True
       self.input_size = input_size
       self.output_size = output_size
       self.new_weight_std = new_weight_std
@@ -79,6 +80,13 @@ class dynamic_dense_layer():
     self.input_size = state[2]
     self.output_size = state[3]
 
+  ### Return the number of weights in the layer
+  def weight_count(self):
+    return self.input_size*self.output_size + self.output_size
+
+  def summary_string(self):
+    return "({}, {})".format(self.input_size, self.output_size)
+
   ### Apply the layer
   def __call__(self, inputs):
     assert(self.w.shape == (self.input_size,self.output_size))
@@ -94,6 +102,7 @@ class dynamic_conv2d_layer():
   def __init__(self, width, input_size, output_size, new_weight_std = 0.1):
     if input_size is not None:
       self.w = tf.Variable(tf.random.normal((width, width, input_size, output_size), stddev=0.1), trainable=True)
+      self.dynamic = True
       self.width = width
       self.input_size = input_size
       self.output_size = output_size
@@ -114,8 +123,7 @@ class dynamic_conv2d_layer():
   ### Add a random output feature
   def expand_out(self):
     new_row =  tf.random.normal((self.width, self.width, self.input_size, 1), stddev=self.new_weight_std)
-    new_bias = tf.random.normal((1,), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([self.w, new_row], 1), trainable=True)
+    self.w = tf.Variable(tf.concat([self.w, new_row], 3), trainable=True)
     self.output_size = self.output_size + 1
 
   ### Remove a random output feature
@@ -124,16 +132,16 @@ class dynamic_conv2d_layer():
       self.w = tf.Variable(tf.concat([self.w[:,:,:,:n], self.w[:,:,:,n+1:]], 3), trainable=True)
       self.output_size = self.output_size - 1
 
-  ### Add a random input feature
+  ### Remove a random input feature
   def contract_in(self, n):
     if self.input_size > 1:
-      self.w = tf.Variable(tf.concat([self.w[:,:,:n], self.w[:,:,n+1:]], 0), trainable=True)
+      self.w = tf.Variable(tf.concat([self.w[:,:,:n], self.w[:,:,n+1:]], 2), trainable=True)
       self.input_size = self.input_size - 1
 
-  ### Remove a random input feature
+  ### Add a random input feature
   def expand_in(self):
-    new_column = tf.random.normal((1, self.output_size), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([self.w, new_column], 0), trainable=True)
+    new_column = tf.random.normal((self.width, self.width, 1, self.output_size), stddev=self.new_weight_std)
+    self.w = tf.Variable(tf.concat([self.w, new_column], 2), trainable=True)
     self.input_size = self.input_size + 1
 
   ### Returns a list of trainable variables
@@ -143,6 +151,22 @@ class dynamic_conv2d_layer():
   ### Returns the current state of the layer
   def get_state(self):
     return (self.w, self.width, self.input_size, self.output_size)
+
+  ### Overwrite the current state of the layer with
+  # the given state
+  def set_state(self, state):
+    assert(not isinstance(state[0], tf.Tensor))
+    self.w = state[0]
+    self.width = state[1]
+    self.input_size = state[2]
+    self.output_size = state[3]
+
+  ### Return the number of weights in the layer
+  def weight_count(self):
+    return self.width*self.width*self.input_size*self.output_size
+
+  def summary_string(self):
+    return "({}, {}, {}, {})".format(self.width, self.width, self.input_size, self.output_size)
 
   ### Apply the layer
   def __call__(self, inputs):
@@ -157,51 +181,51 @@ class dynamic_conv2d_layer():
 class dynamic_model():
   
   ### Create the initial model configuration.
-  def __init__(self, input_size, output_size, intermediate_layers=0, intermediate_layer_size=8,
-               new_weight_std = 0.1, activation = tf.nn.relu):
+  def __init__(self, input_shape, new_weight_std = 0.1, activation = tf.nn.relu):
 
-    ### Create kernels for the convolutions
-    self.conv_w = [ 
-      dynamic_conv2d_layer(3,3,32,0.01),
-      dynamic_conv2d_layer(3,32,64,0.01),
-      dynamic_conv2d_layer(3,64,64,0.01)
-    ]
-
-    # The first fully connected layer
-    connected_input_size = int(input_size[0]*input_size[1]*64 / (4**len(self.conv_w)))
-    self.layers = [dynamic_dense_layer(connected_input_size, intermediate_layer_size, new_weight_std)]
-
-    # Intermediate layers
-    for n in range(intermediate_layers):
-      self.layers += [dynamic_dense_layer(intermediate_layer_size, intermediate_layer_size, new_weight_std)]
+    ### Remember the list of layers
+    self.layers = [
+        dynamic_conv2d_layer(3,3,4,0.01),
+        dynamic_conv2d_layer(3,4,4,0.01),
+        dynamic_conv2d_layer(3,4,4,0.01),
+        tf.keras.layers.Flatten(),
+        dynamic_dense_layer(4*4*4, 4, new_weight_std),
+        dynamic_dense_layer(4, 4, new_weight_std),
+        dynamic_dense_layer(4, 10, new_weight_std)
+      ]
     
-    # Output layer
-    self.layers += [dynamic_dense_layer(intermediate_layer_size, output_size, new_weight_std)]
-
+    self.adjustable_layers = []
+    for l in self.layers:
+      if l.dynamic:
+        self.adjustable_layers.append(l)
+    
+    
     # Variables related to fully connected part
     self.new_weight_std = new_weight_std
-    self.connected_input_size = connected_input_size
-    self.output_size = output_size
+    self.input_size = self.layers[0].input_size
+    self.output_size = self.layers[-1].output_size
     self.activation = activation
 
   ### Returns the number of weights currently in the model
   def weight_count(self):
     count = 0
-    for l in self.layers:
-      count += l.input_size*l.output_size + l.output_size
+    for l in self.adjustable_layers:
+      count += l.weight_count()
     return count
 
   def summary(self):
-    for i, l in enumerate(self.layers):
+    for i, l in enumerate(self.adjustable_layers):
       weights = l.input_size*l.output_size + l.output_size
-      print("Layer {}: ({},{}),  number weights {}".format(i, l.input_size, l.output_size, weights))
+      print("Layer {}: {},  number weights {}".format(i, l.summary_string(), weights))
 
   ### Add a feature
   def expand(self):
     # Pick a layer
-    nl = (int)((len(self.layers)-1)*np.random.rand())
-    l1 = self.layers[nl]
-    l2 = self.layers[nl+1]
+    nl = (int)((len(self.adjustable_layers)-1)*np.random.rand())
+    if nl == 2:
+      return
+    l1 = self.adjustable_layers[nl]
+    l2 = self.adjustable_layers[nl+1]
 
     # Expand the number of outputs in the layer
     # and the number of inputs in the next one
@@ -211,12 +235,14 @@ class dynamic_model():
   ### Remove a random feature
   def contract(self):
     # Pick a layer
-    nl = (int)((len(self.layers)-1)*np.random.rand())
-    l1 = self.layers[nl]
-    l2 = self.layers[nl+1]
+    nl = (int)((len(self.adjustable_layers)-1)*np.random.rand())
+    if nl == 2:
+      return
+    l1 = self.adjustable_layers[nl]
+    l2 = self.adjustable_layers[nl+1]
 
     # Choose a random feature
-    n = (int)(self.layers[0].output_size*np.random.rand())
+    n = (int)(l1.output_size*np.random.rand())
 
     # remove it from both the layer and the next one
     l1.contract_out(n)
@@ -246,42 +272,37 @@ class dynamic_model():
       accepted = True
 
     self.assert_consistency()
+    #self.summary()
     return accepted
 
   ### Returns a list of trainable variables
   def trainable_variables(self):
-    conv_layers = [var for l in self.conv_w for var in l.trainable_variables()]
-    dense_layers = [var for l in self.layers for var in l.trainable_variables()]
-    return conv_layers + dense_layers
+    return  [var for l in self.adjustable_layers for var in l.trainable_variables()]
   
   ### Returns the current state of the model
   def get_state(self):
-    return [l.get_state() for l in self.layers]
+    return [l.get_state() for l in self.adjustable_layers]
 
   ### Overwrite the current state
   def set_state(self, state):
-    self.layers = []
-    for layer_state in state:
-      self.layers += [dynamic_dense_layer.from_state(layer_state)]
+    for i in range(len(self.adjustable_layers)):
+      self.adjustable_layers[i].set_state(state[i])
 
   def assert_consistency(self):
-    previous_size = self.connected_input_size
-    for l in self.layers:
-      assert(l.input_size == previous_size)
-      assert(l.input_size == l.w.shape[0])
-      assert(l.output_size == l.w.shape[1])
-      assert(l.output_size == l.b.shape[0])
-      previous_size = l.output_size
-    assert(self.output_size == previous_size)
+    pass
+    #previous_size = self.connected_input_size
+    #for l in self.layers:
+    #  assert(l.input_size == previous_size)
+    #  assert(l.input_size == l.w.shape[0])
+    #  assert(l.output_size == l.w.shape[1])
+    #  assert(l.output_size == l.b.shape[0])
+    #  previous_size = l.output_size
+    #assert(self.output_size == previous_size)
 
 
   ### Apply the model
   def __call__(self, inputs):
     x = inputs
-    for l in self.conv_w:
-      x = l(x)
-      x = self.activation(x)
-    x = tf.reshape(x, (x.shape[0], -1))
     for l in self.layers[:-1]:
       x = l(x)
       x = self.activation(x)
@@ -293,7 +314,8 @@ class dynamic_model():
   # Add or remove dense layers
   #-------------------------------
 
-  ### Add a layer
+  ### Add a dense layer
+  # The new layer starts close to an identity operation
   def add_layer(self):
     # Pick a layer
     nl = (int)((len(self.layers)-1)*np.random.rand())
