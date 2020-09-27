@@ -46,11 +46,11 @@ valid_dataset = tf.data.Dataset.from_tensor_slices(valid_data).shuffle(10000).ba
 
 ### Create two dynamic dense layers
 layers = [
-        dynamic_conv2d_layer(3,3,4,0.01),
-        dynamic_conv2d_layer(3,4,4,0.01),
-        dynamic_conv2d_layer(3,4,4,0.01),
+        dynamic_conv2d_layer(3,3,32,0.01),
+        dynamic_conv2d_layer(3,32,32,0.01),
+        dynamic_conv2d_layer(3,32,32,0.01),
         tf.keras.layers.Flatten(),
-        dynamic_dense_layer(4*4*4, 4, new_weight_std),
+        dynamic_dense_layer(4*4*32, 4, new_weight_std),
         dynamic_dense_layer(4, 4, new_weight_std),
         dynamic_dense_layer(4, 10, new_weight_std)
       ]

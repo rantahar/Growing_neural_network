@@ -63,6 +63,7 @@ class dynamic_dense_layer():
       self.input_size = self.input_size - 1
 
   ### Returns a list of trainable variables
+  @property
   def trainable_variables(self):
     return [self.w, self.b]
   
@@ -145,6 +146,7 @@ class dynamic_conv2d_layer():
     self.input_size = self.input_size + 1
 
   ### Returns a list of trainable variables
+  @property
   def trainable_variables(self):
     return [self.w]
   
@@ -186,12 +188,6 @@ class dynamic_model():
     ### Remember the list of layers
     self.layers = layers
     
-    self.adjustable_layers = []
-    for l in self.layers:
-      if l.dynamic:
-        self.adjustable_layers.append(l)
-    
-    
     # Variables related to fully connected part
     self.new_weight_std = new_weight_std
     self.input_size = self.layers[0].input_size
@@ -201,23 +197,25 @@ class dynamic_model():
   ### Returns the number of weights currently in the model
   def weight_count(self):
     count = 0
-    for l in self.adjustable_layers:
-      count += l.weight_count()
+    for l in self.layers:
+      if l.dynamic:
+        count += l.weight_count()
     return count
 
   def summary(self):
-    for i, l in enumerate(self.adjustable_layers):
-      weights = l.input_size*l.output_size + l.output_size
-      print("Layer {}: {},  number weights {}".format(i, l.summary_string(), weights))
+    for i, l in enumerate(self.layers):
+      if l.dynamic:
+        weights = l.input_size*l.output_size + l.output_size
+        print("Layer {}: {},  number weights {}".format(i, l.summary_string(), weights))
 
   ### Add a feature
   def expand(self):
     # Pick a layer
-    nl = (int)((len(self.adjustable_layers)-1)*np.random.rand())
-    if nl == 2:
+    nl = (int)((len(self.layers)-1)*np.random.rand())
+    l1 = self.layers[nl]
+    l2 = self.layers[nl+1]
+    if not l1.dynamic or not l2.dynamic:
       return
-    l1 = self.adjustable_layers[nl]
-    l2 = self.adjustable_layers[nl+1]
 
     # Expand the number of outputs in the layer
     # and the number of inputs in the next one
@@ -227,11 +225,11 @@ class dynamic_model():
   ### Remove a random feature
   def contract(self):
     # Pick a layer
-    nl = (int)((len(self.adjustable_layers)-1)*np.random.rand())
-    if nl == 2:
+    nl = (int)((len(self.layers)-1)*np.random.rand())
+    l1 = self.layers[nl]
+    l2 = self.layers[nl+1]
+    if not l1.dynamic or not l2.dynamic:
       return
-    l1 = self.adjustable_layers[nl]
-    l2 = self.adjustable_layers[nl+1]
 
     # Choose a random feature
     n = (int)(l1.output_size*np.random.rand())
@@ -269,16 +267,23 @@ class dynamic_model():
 
   ### Returns a list of trainable variables
   def trainable_variables(self):
-    return  [var for l in self.adjustable_layers for var in l.trainable_variables()]
+    return  [var for l in self.layers for var in l.trainable_variables]
   
   ### Returns the current state of the model
   def get_state(self):
-    return [l.get_state() for l in self.adjustable_layers]
+    state = []
+    for l in self.layers:
+      if l.dynamic:
+        state.append(l.get_state())
+    return state
 
   ### Overwrite the current state
   def set_state(self, state):
-    for i in range(len(self.adjustable_layers)):
-      self.adjustable_layers[i].set_state(state[i])
+    i=0
+    for l in self.layers:
+      if l.dynamic:
+        l.set_state(state[i])
+        i=i+1
 
   def assert_consistency(self):
     pass
