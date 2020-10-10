@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import time
 
-from dynamic_networks import dynamic_model, dynamic_dense_layer, dynamic_conv2d_layer
+from dynamic_networks import dynamic_model, dynamic_dense_layer, dynamic_conv2d_layer, dynamic_conv2d_to_dense_layer
 
 #################################################
 # A simple test for training the dynamic network
@@ -46,11 +46,10 @@ valid_dataset = tf.data.Dataset.from_tensor_slices(valid_data).shuffle(10000).ba
 
 ### Create two dynamic dense layers
 layers = [
-        dynamic_conv2d_layer(3,3,32,0.01),
-        dynamic_conv2d_layer(3,32,32,0.01),
-        dynamic_conv2d_layer(3,32,32,0.01),
-        tf.keras.layers.Flatten(),
-        dynamic_dense_layer(4*4*32, 10, new_weight_std),
+        dynamic_conv2d_layer(3,3,10,new_weight_std),
+        dynamic_conv2d_layer(3,10,10,new_weight_std),
+        dynamic_conv2d_layer(3,10,10,new_weight_std),
+        dynamic_conv2d_to_dense_layer(4*4, 10, 10, new_weight_std),
         dynamic_dense_layer(10, 10, new_weight_std),
         dynamic_dense_layer(10, 10, new_weight_std)
       ]

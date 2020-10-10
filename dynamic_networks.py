@@ -183,19 +183,94 @@ class dynamic_conv2d_layer():
 class dynamic_conv2d_to_dense_layer():
 
   ### Create the layer with a given initial configuration.
-  def __init__(self, dense_layer):
-    if input_size is not None:
-      self.dynamic_input = True
-      self.dynamic_output = False
-      
-  ### An output feature of the conv2 layer has been removed. Remove corresponding
-  ### weights from the input of the following dense layer 
-  def contract_in(self, n):
-    pass
+  def __init__(self, pixels, features, output_size, new_weight_std = 0.1):
+    if pixels is not None:
+      self.w = tf.Variable(tf.random.normal((pixels*features, output_size), stddev=0.1), trainable=True)
+      self.b = tf.Variable(tf.random.normal((output_size,), stddev=0.1), trainable=True)
+      self.dynamic = True
+      self.pixels = pixels
+      self.features = features
+      self.output_size = output_size
+      self.new_weight_std = new_weight_std
+
+  ### Initialize from state tuple (or list)
+  @classmethod
+  def from_state(cls, state, new_weight_std = 0.1):
+    obj = cls(None, None)
+    obj.w = state[0]
+    obj.b = state[1]
+    obj.features = state[2]
+    obj.output_size = state[3]
+    obj.new_weight_std = new_weight_std
+    return obj
+
+
+  ### Add a random output feature
+  def expand_out(self):
+    new_row =  tf.random.normal((self.pixels*self.features, 1), stddev=self.new_weight_std)
+    new_bias = tf.random.normal((1,), stddev=self.new_weight_std)
+    self.w = tf.Variable(tf.concat([self.w, new_row], 1), trainable=True)
+    self.b = tf.Variable(tf.concat([self.b, new_bias], 0), trainable=True)
+    self.output_size = self.output_size + 1
+
+  ### Remove a random output feature
+  def contract_out(self, n):
+    if self.output_size > 1:
+      self.w = tf.Variable(tf.concat([self.w[:,:n], self.w[:,n+1:]], 1), trainable=True)
+      self.b = tf.Variable(tf.concat([self.b[:n], self.b[n+1:]], 0), trainable=True)
+      self.output_size = self.output_size - 1
 
   ### Add a random input feature
   def expand_in(self):
-    pass
+    new_column = tf.random.normal((self.pixels, self.output_size), stddev=self.new_weight_std)
+    self.w = tf.Variable(tf.concat([self.w, new_column], 0), trainable=True)
+    self.features = self.features + 1
+
+  ### Remove a random input feature
+  def contract_in(self, n):
+    if self.features > 1:
+      first = n*self.pixels
+      last = (n+1)*self.pixels
+      self.w = tf.Variable(tf.concat([self.w[:first], self.w[last:]], 0), trainable=True)
+      self.features = self.features - 1
+
+  ### Returns a list of trainable variables
+  @property
+  def trainable_variables(self):
+    return [self.w, self.b]
+  
+  ### Returns the current state of the layer
+  def get_state(self):
+    return (self.w, self.b, self.pixels, self.features, self.output_size)
+
+  ### Overwrite the current state of the layer with
+  # the given state
+  def set_state(self, state):
+    assert(not isinstance(state[0], tf.Tensor))
+    assert(not isinstance(state[1], tf.Tensor))
+    self.w = state[0]
+    self.b = state[1]
+    self.pixels = state[2]
+    self.features = state[3]
+    self.output_size = state[4]
+
+  ### Return the number of weights in the layer
+  def weight_count(self):
+    return self.pixels*self.features*self.output_size + self.output_size
+
+  def summary_string(self):
+    return "({}, {}, {})".format(self.pixels, self.features, self.output_size)
+
+  ### Apply the layer
+  def __call__(self, inputs):
+    assert(self.w.shape == (self.pixels*self.features,self.output_size))
+    assert(self.b.shape == (self.output_size))
+    # Move pixels to the last columns, so that it is easier to add and remove
+    x = tf.transpose(inputs, perm=[0, 3, 1, 2])
+    # Now flatten
+    x = tf.reshape(x, [x.shape[0], -1])
+    x = tf.matmul(x,self.w) + self.b
+    return x
 
 
 
@@ -226,8 +301,7 @@ class dynamic_model():
   def summary(self):
     for i, l in enumerate(self.layers):
       if l.dynamic:
-        weights = l.input_size*l.output_size + l.output_size
-        print("Layer {}: {},  number weights {}".format(i, l.summary_string(), weights))
+        print("Layer {}: {},  number of weights {}".format(i, l.summary_string(), l.weight_count()))
 
   ### Add a feature
   def expand(self):
