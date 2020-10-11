@@ -46,12 +46,12 @@ valid_dataset = tf.data.Dataset.from_tensor_slices(valid_data).shuffle(10000).ba
 
 ### Create two dynamic dense layers
 layers = [
-        dynamic_conv2d_layer(3,3,10,new_weight_std),
-        dynamic_conv2d_layer(3,10,10,new_weight_std),
-        dynamic_conv2d_layer(3,10,10,new_weight_std),
-        dynamic_conv2d_to_dense_layer(4*4, 10, 10, new_weight_std),
-        dynamic_dense_layer(10, 10, new_weight_std),
-        dynamic_dense_layer(10, 10, new_weight_std)
+        dynamic_conv2d_layer(3,3,4,new_weight_std),
+        dynamic_conv2d_layer(3,4,4,new_weight_std),
+        dynamic_conv2d_layer(3,4,4,new_weight_std),
+        dynamic_conv2d_to_dense_layer(4*4, 4, 4, new_weight_std),
+        dynamic_dense_layer(4, 4, new_weight_std),
+        dynamic_dense_layer(4, 10, new_weight_std)
       ]
 classifier = dynamic_model(layers, new_weight_std = new_weight_std)
 
