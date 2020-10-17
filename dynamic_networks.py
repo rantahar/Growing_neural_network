@@ -13,15 +13,17 @@ import numpy as np
 
 # The dynamic matrix that allows adding and removing features
 class dynamic_matrix():
-  def __init__(self, input_size, output_size, std=0.1):
-    if input_size is not None:
-      self.mat  = tf.Variable(tf.random.normal((input_size, output_size), stddev=std), trainable=True)
-      self.mom  = tf.Variable(np.zeros((input_size, output_size)), trainable=False)
-      self.mom2 = tf.Variable(np.zeros((input_size, output_size)), trainable=False)
+  def __init__(self, shape, std=0.1):
+    if shape is not None:
+      self.mat  = tf.Variable(tf.random.normal(shape, stddev=std), trainable=True)
+      self.mom  = tf.Variable(np.zeros(shape), trainable=False)
+      self.mom2 = tf.Variable(np.zeros(shape), trainable=False)
+
+      self.dim = len(shape)
   
   @classmethod
   def from_state(cls, state):
-    obj = cls(None, None)
+    obj = cls(None)
     obj.mat  = state[0]
     obj.mom  = state[1]
     obj.mom2 = state[2]
@@ -29,38 +31,65 @@ class dynamic_matrix():
 
   ### Add a random output feature
   def expand_out(self, n, std):
-    new_row =  tf.random.normal((self.mat.shape[0], n), stddev=std)
-    self.mat = tf.Variable(tf.concat([self.mat, new_row], 1), trainable=True)
+    new_row =  tf.random.normal(self.mat.shape[:-1]+(n,), stddev=std)
+    self.mat = tf.Variable(tf.concat([self.mat, new_row], self.dim-1), trainable=True)
     # Set momenta for the new row to zero
-    mom_row  =  tf.Variable(np.zeros((self.mat.shape[0], n)))
-    self.mom  = tf.Variable(tf.concat([self.mom, mom_row], 1), trainable=False)
-    mom2_row =  tf.Variable(np.zeros((self.mat.shape[0], n)))
-    self.mom2 = tf.Variable(tf.concat([self.mom2, mom2_row], 1), trainable=False)
+    mom_row  =  tf.Variable(np.zeros((self.mom.shape[:-1]+(n,))))
+    self.mom  = tf.Variable(tf.concat([self.mom, mom_row], self.dim-1), trainable=False)
+    mom2_row =  tf.Variable(np.zeros((self.mom2.shape[:-1]+(n,))))
+    self.mom2 = tf.Variable(tf.concat([self.mom2, mom2_row], self.dim-1), trainable=False)
 
   ### Remove a random output feature
   def contract_out(self, n, index):
-    if self.mat.shape[1] > 1:
-      self.mat = tf.Variable(tf.concat([self.mat[:,:n*index], self.mat[:,n*(index+1):]], 1), trainable=True)
-      self.mom  = tf.Variable(tf.concat([self.mom[:,:n*index], self.mom[:,n*(index+1):]], 1), trainable=False)
-      self.mom2 = tf.Variable(tf.concat([self.mom2[:,:n*index], self.mom2[:,n*(index+1):]], 1), trainable=False)
+    if self.shape[-1] > 1:
+      start = [0 for x in self.shape]
+      size = list(self.shape)
+      size[-1] = n*index
+      new_mat  = tf.slice(self.mat,  start, size)
+      new_mom  = tf.slice(self.mom,  start, size)
+      new_mom2 = tf.slice(self.mom2, start, size)
+
+      start[-1] = n*(index+1)
+      size[-1] = self.shape[-1] - n*(index+1)
+      new_mat  = tf.concat([new_mat,  tf.slice(self.mat, start, size)], self.dim-1)
+      new_mom  = tf.concat([new_mom,  tf.slice(self.mom,  start, size)], self.dim-1)
+      new_mom2 = tf.concat([new_mom2, tf.slice(self.mom2, start, size)], self.dim-1)
+
+      self.mat  = tf.Variable(new_mat, trainable=True)
+      self.mom  = tf.Variable(new_mom, trainable=False)
+      self.mom2 = tf.Variable(new_mom2, trainable=False)
 
   ### Add a random input feature
   def expand_in(self, n, std):
-    new_column =  tf.random.normal((n, self.mat.shape[1]), stddev=std)
-    self.mat = tf.Variable(tf.concat([self.mat, new_column], 0), trainable=True)
+    new_column =  tf.random.normal(self.mat.shape[:-2] + (n,self.mat.shape[-1]), stddev=std)
+    self.mat = tf.Variable(tf.concat([self.mat, new_column], self.dim-2), trainable=True)
     # Set momenta for the new row to zero
-    mom_column  =  tf.Variable(np.zeros((n, self.mat.shape[1])))
-    self.mom  = tf.Variable(tf.concat([self.mom, mom_column], 0), trainable=False)
-    mom2_column =  tf.Variable(np.zeros((n, self.mat.shape[1])))
-    self.mom2 = tf.Variable(tf.concat([self.mom2, mom2_column], 0), trainable=False)
+    mom_column  =  tf.Variable(np.zeros(self.mom.shape[:-2] + (n,self.mom.shape[-1])))
+    self.mom  = tf.Variable(tf.concat([self.mom, mom_column], self.dim-2), trainable=False)
+    mom2_column =  tf.Variable(np.zeros(self.mom2.shape[:-2] + (n,self.mom2.shape[-1])))
+    self.mom2 = tf.Variable(tf.concat([self.mom2, mom2_column], self.dim-2), trainable=False)
 
   ### Remove a random input feature
   def contract_in(self, n, index):
-    if self.mat.shape[0] > 1:
-      self.mat = tf.Variable(tf.concat([self.mat[:n*index], self.mat[n*(index+1):]], 0), trainable=True)
-      self.mom  = tf.Variable(tf.concat([self.mom[:n*index], self.mom[n*(index+1):]], 0), trainable=False)
-      self.mom2 = tf.Variable(tf.concat([self.mom2[:n*index], self.mom2[n*(index+1):]], 0), trainable=False)
+    if self.mat.shape[-2] > 1:
+      start = [0 for x in self.shape]
+      size = list(self.shape)
+      size[-2] = n*index
+      new_mat  = tf.slice(self.mat,  start, size)
+      new_mom  = tf.slice(self.mom,  start, size)
+      new_mom2 = tf.slice(self.mom2, start, size)
 
+      start[-2] = n*(index+1)
+      size[-2] = self.shape[-2] - n*(index+1)
+      new_mat  = tf.concat([new_mat,  tf.slice(self.mat, start, size)], self.dim-2)
+      new_mom  = tf.concat([new_mom,  tf.slice(self.mom,  start, size)], self.dim-2)
+      new_mom2 = tf.concat([new_mom2, tf.slice(self.mom2, start, size)], self.dim-2)
+
+      self.mat  = tf.Variable(new_mat, trainable=True)
+      self.mom  = tf.Variable(new_mom, trainable=False)
+      self.mom2 = tf.Variable(new_mom2, trainable=False)
+
+  
   def get_state(self):
     return (self.mat,self.mom,self.mom2)
 
@@ -74,7 +103,7 @@ class dynamic_matrix():
 
   @property
   def shape(self):
-    return self.mat.shape
+    return self.mat.get_shape().as_list()
 
 
 
@@ -87,8 +116,8 @@ class dynamic_dense_layer():
   ### Create the layer with a given initial configuration.
   def __init__(self, input_size, output_size, new_weight_std = 0.1):
     if input_size is not None:
-      self.w = dynamic_matrix(input_size, output_size, 0.1)
-      self.b = dynamic_matrix(1, output_size, 0.1)
+      self.w = dynamic_matrix((input_size, output_size), 0.1)
+      self.b = dynamic_matrix((1, output_size), 0.1)
       self.dynamic = True
       self.input_size = input_size
       self.output_size = output_size
@@ -98,8 +127,8 @@ class dynamic_dense_layer():
   @classmethod
   def from_state(cls, state, new_weight_std = 0.1):
     obj = cls(None, None)
-    obj.w.from_state(state[0])
-    obj.b.from_state(state[1])
+    obj.w = dynamic_matrix.from_state(state[0])
+    obj.b = dynamic_matrix.from_state(state[1])
     obj.input_size = state[2]
     obj.output_size = state[3]
     obj.new_weight_std = 0.01
@@ -121,7 +150,6 @@ class dynamic_dense_layer():
 
   ### Add a random input feature
   def expand_in(self):
-    new_column = tf.random.normal((1, self.output_size), stddev=self.new_weight_std)
     self.w.expand_in(1, self.new_weight_std)
     self.input_size = self.input_size + 1
 
@@ -159,8 +187,8 @@ class dynamic_dense_layer():
 
   ### Apply the layer
   def __call__(self, inputs):
-    assert(self.w.shape == (self.input_size,self.output_size))
-    assert(self.b.shape == (1, self.output_size))
+    assert(self.w.shape == [self.input_size,self.output_size])
+    assert(self.b.shape == [1, self.output_size])
     return tf.matmul(inputs,self.w.mat) + self.b.mat
 
 
@@ -171,7 +199,7 @@ class dynamic_conv2d_layer():
   ### Create the layer with a given initial configuration.
   def __init__(self, width, input_size, output_size, new_weight_std = 0.1):
     if input_size is not None:
-      self.w = tf.Variable(tf.random.normal((width, width, input_size, output_size), stddev=0.1), trainable=True)
+      self.w = dynamic_matrix((width, width, input_size, output_size), 0.1)
       self.dynamic = True
       self.width = width
       self.input_size = input_size
@@ -182,7 +210,7 @@ class dynamic_conv2d_layer():
   @classmethod
   def from_state(cls, state, new_weight_std = 0.1):
     obj = cls(None, None)
-    obj.w = state[0]
+    obj.w = dynamic_matrix.from_state(state[0])
     obj.width = state[1]
     obj.input_size = state[2]
     obj.output_size = state[3]
@@ -192,42 +220,40 @@ class dynamic_conv2d_layer():
 
   ### Add a random output feature
   def expand_out(self):
-    new_row =  tf.random.normal((self.width, self.width, self.input_size, 1), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([self.w, new_row], 3), trainable=True)
+    self.w.expand_out(1,self.new_weight_std)
     self.output_size = self.output_size + 1
 
   ### Remove a random output feature
   def contract_out(self, n):
     if self.output_size > 1:
-      self.w = tf.Variable(tf.concat([self.w[:,:,:,:n], self.w[:,:,:,n+1:]], 3), trainable=True)
+      self.w.contract_out(1, n)
       self.output_size = self.output_size - 1
 
   ### Remove a random input feature
   def contract_in(self, n):
     if self.input_size > 1:
-      self.w = tf.Variable(tf.concat([self.w[:,:,:n], self.w[:,:,n+1:]], 2), trainable=True)
+      self.w.contract_in(1, n)
       self.input_size = self.input_size - 1
 
   ### Add a random input feature
   def expand_in(self):
-    new_column = tf.random.normal((self.width, self.width, 1, self.output_size), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([self.w, new_column], 2), trainable=True)
+    self.w.expand_in(1, self.new_weight_std)
     self.input_size = self.input_size + 1
 
   ### Returns a list of trainable variables
   @property
   def trainable_variables(self):
-    return [self.w]
+    return [self.w.mat]
   
   ### Returns the current state of the layer
   def get_state(self):
-    return (self.w, self.width, self.input_size, self.output_size)
+    return (self.w.get_state(), self.width, self.input_size, self.output_size)
 
   ### Overwrite the current state of the layer with
   # the given state
   def set_state(self, state):
     assert(not isinstance(state[0], tf.Tensor))
-    self.w = state[0]
+    self.w.set_state(state[0])
     self.width = state[1]
     self.input_size = state[2]
     self.output_size = state[3]
@@ -241,8 +267,8 @@ class dynamic_conv2d_layer():
 
   ### Apply the layer
   def __call__(self, inputs):
-    assert(self.w.shape == (self.width, self.width, self.input_size,self.output_size))
-    return tf.nn.conv2d(inputs, self.w, 2, "SAME")
+    assert(self.w.shape == [self.width, self.width, self.input_size,self.output_size])
+    return tf.nn.conv2d(inputs, self.w.mat, 2, "SAME")
 
 
 
@@ -254,8 +280,8 @@ class dynamic_conv2d_to_dense_layer():
   ### Create the layer with a given initial configuration.
   def __init__(self, pixels, features, output_size, new_weight_std = 0.1):
     if pixels is not None:
-      self.w = tf.Variable(tf.random.normal((pixels*features, output_size), stddev=0.1), trainable=True)
-      self.b = tf.Variable(tf.random.normal((output_size,), stddev=0.1), trainable=True)
+      self.w = dynamic_matrix((pixels*features, output_size), 0.1)
+      self.b = dynamic_matrix((1, output_size), 0.1)
       self.dynamic = True
       self.pixels = pixels
       self.features = features
@@ -266,8 +292,8 @@ class dynamic_conv2d_to_dense_layer():
   @classmethod
   def from_state(cls, state, new_weight_std = 0.1):
     obj = cls(None, None)
-    obj.w = state[0]
-    obj.b = state[1]
+    obj.w = dynamic_matrix.from_state(state[0])
+    obj.b = dynamic_matrix.from_state(state[1])
     obj.features = state[2]
     obj.output_size = state[3]
     obj.new_weight_std = new_weight_std
@@ -276,49 +302,44 @@ class dynamic_conv2d_to_dense_layer():
 
   ### Add a random output feature
   def expand_out(self):
-    new_row =  tf.random.normal((self.pixels*self.features, 1), stddev=self.new_weight_std)
-    new_bias = tf.random.normal((1,), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([self.w, new_row], 1), trainable=True)
-    self.b = tf.Variable(tf.concat([self.b, new_bias], 0), trainable=True)
+    self.w.expand_out(1, self.new_weight_std)
+    self.b.expand_out(1, self.new_weight_std)
     self.output_size = self.output_size + 1
 
   ### Remove a random output feature
   def contract_out(self, n):
     if self.output_size > 1:
-      self.w = tf.Variable(tf.concat([self.w[:,:n], self.w[:,n+1:]], 1), trainable=True)
-      self.b = tf.Variable(tf.concat([self.b[:n], self.b[n+1:]], 0), trainable=True)
+      self.w.contract_out(1, n)
+      self.b.contract_out(1, n)
       self.output_size = self.output_size - 1
 
   ### Add a random input feature
   def expand_in(self):
-    new_column = tf.random.normal((self.pixels, self.output_size), stddev=self.new_weight_std)
-    self.w = tf.Variable(tf.concat([self.w, new_column], 0), trainable=True)
+    self.w.expand_in(self.pixels, self.new_weight_std)
     self.features = self.features + 1
 
   ### Remove a random input feature
   def contract_in(self, n):
     if self.features > 1:
-      first = n*self.pixels
-      last = (n+1)*self.pixels
-      self.w = tf.Variable(tf.concat([self.w[:first], self.w[last:]], 0), trainable=True)
+      self.w.contract_in(self.pixels, n)
       self.features = self.features - 1
 
   ### Returns a list of trainable variables
   @property
   def trainable_variables(self):
-    return [self.w, self.b]
+    return [self.w.mat, self.b.mat]
   
   ### Returns the current state of the layer
   def get_state(self):
-    return (self.w, self.b, self.pixels, self.features, self.output_size)
+    return (self.w.get_state(), self.b.get_state(), self.pixels, self.features, self.output_size)
 
   ### Overwrite the current state of the layer with
   # the given state
   def set_state(self, state):
     assert(not isinstance(state[0], tf.Tensor))
     assert(not isinstance(state[1], tf.Tensor))
-    self.w = state[0]
-    self.b = state[1]
+    self.w.set_state(state[0])
+    self.b.set_state(state[1])
     self.pixels = state[2]
     self.features = state[3]
     self.output_size = state[4]
@@ -332,13 +353,13 @@ class dynamic_conv2d_to_dense_layer():
 
   ### Apply the layer
   def __call__(self, inputs):
-    assert(self.w.shape == (self.pixels*self.features,self.output_size))
-    assert(self.b.shape == (self.output_size))
+    assert(self.w.shape == [self.pixels*self.features,self.output_size])
+    assert(self.b.shape == [1, self.output_size])
     # Move pixels to the last columns, so that it is easier to add and remove
     x = tf.transpose(inputs, perm=[0, 3, 1, 2])
     # Now flatten
     x = tf.reshape(x, [x.shape[0], -1])
-    x = tf.matmul(x,self.w) + self.b
+    x = tf.matmul(x,self.w.mat) + self.b.mat
     return x
 
 
