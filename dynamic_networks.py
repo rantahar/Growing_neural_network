@@ -446,7 +446,6 @@ class dynamic_model():
     else:
       accepted = True
 
-    self.assert_consistency()
     #self.summary()
     return accepted
 
@@ -470,17 +469,6 @@ class dynamic_model():
         l.set_state(state[i])
         i=i+1
 
-  def assert_consistency(self):
-    pass
-    #previous_size = self.connected_input_size
-    #for l in self.layers:
-    #  assert(l.input_size == previous_size)
-    #  assert(l.input_size == l.w.shape[0])
-    #  assert(l.output_size == l.w.shape[1])
-    #  assert(l.output_size == l.b.shape[0])
-    #  previous_size = l.output_size
-    #assert(self.output_size == previous_size)
-
 
   ### Apply the model
   def __call__(self, inputs):
@@ -490,6 +478,7 @@ class dynamic_model():
       x = self.activation(x)
     x = self.layers[-1](x)
     return x
+
 
 
   #-------------------------------
