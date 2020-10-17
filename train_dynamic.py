@@ -23,7 +23,7 @@ IMG_SIZE = 32
 batch_size = 100
 
 #### Network update parameters
-network_updates_per_epoch = 10
+network_updates_per_epoch = 2
 weight_penalty = 1e-9
 new_weight_std = 0.1
 
