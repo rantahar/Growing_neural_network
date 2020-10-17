@@ -81,7 +81,7 @@ def gradient_train_step(data):
 
   gradients = tape.gradient(loss, trainable_variables)
   
-  optimizer.apply_gradients(zip(gradients, trainable_variables))
+  classifier.apply_adam(gradients)
   return loss
 
 

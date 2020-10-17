@@ -14,10 +14,11 @@ import numpy as np
 # The dynamic matrix that allows adding and removing features
 class dynamic_matrix():
   def __init__(self, shape, std=0.1):
+    self.gradient_step = tf.Variable(0.0, trainable=False)
     if shape is not None:
       self.mat  = tf.Variable(tf.random.normal(shape, stddev=std), trainable=True)
-      self.mom  = tf.Variable(np.zeros(shape), trainable=False)
-      self.mom2 = tf.Variable(np.zeros(shape), trainable=False)
+      self.mom  = tf.Variable(np.zeros(shape).astype('float32'), trainable=False)
+      self.mom2 = tf.Variable(np.zeros(shape).astype('float32'), trainable=False)
 
       self.dim = len(shape)
   
@@ -34,9 +35,9 @@ class dynamic_matrix():
     new_row =  tf.random.normal(self.mat.shape[:-1]+(n,), stddev=std)
     self.mat = tf.Variable(tf.concat([self.mat, new_row], self.dim-1), trainable=True)
     # Set momenta for the new row to zero
-    mom_row  =  tf.Variable(np.zeros((self.mom.shape[:-1]+(n,))))
+    mom_row  =  tf.Variable(np.zeros((self.mom.shape[:-1]+(n,))).astype('float32'))
     self.mom  = tf.Variable(tf.concat([self.mom, mom_row], self.dim-1), trainable=False)
-    mom2_row =  tf.Variable(np.zeros((self.mom2.shape[:-1]+(n,))))
+    mom2_row =  tf.Variable(np.zeros((self.mom2.shape[:-1]+(n,))).astype('float32'))
     self.mom2 = tf.Variable(tf.concat([self.mom2, mom2_row], self.dim-1), trainable=False)
 
   ### Remove a random output feature
@@ -61,12 +62,12 @@ class dynamic_matrix():
 
   ### Add a random input feature
   def expand_in(self, n, std):
-    new_column =  tf.random.normal(self.mat.shape[:-2] + (n,self.mat.shape[-1]), stddev=std)
+    new_column = tf.random.normal(self.mat.shape[:-2] + (n,self.mat.shape[-1]), stddev=std)
     self.mat = tf.Variable(tf.concat([self.mat, new_column], self.dim-2), trainable=True)
     # Set momenta for the new row to zero
-    mom_column  =  tf.Variable(np.zeros(self.mom.shape[:-2] + (n,self.mom.shape[-1])))
+    mom_column  =  tf.Variable(np.zeros(self.mom.shape[:-2] + (n,self.mom.shape[-1])).astype('float32'))
     self.mom  = tf.Variable(tf.concat([self.mom, mom_column], self.dim-2), trainable=False)
-    mom2_column =  tf.Variable(np.zeros(self.mom2.shape[:-2] + (n,self.mom2.shape[-1])))
+    mom2_column =  tf.Variable(np.zeros(self.mom2.shape[:-2] + (n,self.mom2.shape[-1])).astype('float32'))
     self.mom2 = tf.Variable(tf.concat([self.mom2, mom2_column], self.dim-2), trainable=False)
 
   ### Remove a random input feature
@@ -88,7 +89,6 @@ class dynamic_matrix():
       self.mat  = tf.Variable(new_mat, trainable=True)
       self.mom  = tf.Variable(new_mom, trainable=False)
       self.mom2 = tf.Variable(new_mom2, trainable=False)
-
   
   def get_state(self):
     return (self.mat,self.mom,self.mom2)
@@ -100,6 +100,19 @@ class dynamic_matrix():
     self.mat  = state[0]
     self.mom  = state[1]
     self.mom2 = state[2]
+
+  # The Adam gradient descent method
+  def apply_adam(self, gradient, 
+                 alpha=0.001, beta1=0.9,
+                 beta2=0.999, epsilon=1e-8):
+    t = self.gradient_step.assign_add(1.0)
+
+    mom = self.mom.assign(beta1*self.mom + (1-beta1)*gradient)
+    mom2 = self.mom2.assign(beta2*self.mom2 + (1-beta2)*gradient*gradient)
+    mom_hat = mom/(1-tf.pow(beta1,t))
+    mom2_hat = mom2/(1-tf.pow(beta2,t))
+
+    self.mat.assign_add(-alpha*mom_hat/(tf.sqrt(mom2_hat) + epsilon))
 
   @property
   def shape(self):
@@ -185,6 +198,12 @@ class dynamic_dense_layer():
   def summary_string(self):
     return "({}, {})".format(self.input_size, self.output_size)
 
+  def apply_adam(self, gradients, 
+                 alpha=0.001, beta1=0.9,
+                 beta2=0.999, epsilon=1e-8):
+    self.w.apply_adam(gradients[0], alpha, beta1, beta2, epsilon)
+    self.b.apply_adam(gradients[1], alpha, beta1, beta2, epsilon)
+
   ### Apply the layer
   def __call__(self, inputs):
     assert(self.w.shape == [self.input_size,self.output_size])
@@ -264,6 +283,11 @@ class dynamic_conv2d_layer():
 
   def summary_string(self):
     return "({}, {}, {}, {})".format(self.width, self.width, self.input_size, self.output_size)
+
+  def apply_adam(self, gradients, 
+                 alpha=0.001, beta1=0.9,
+                 beta2=0.999, epsilon=1e-8):
+    self.w.apply_adam(gradients[0], alpha, beta1, beta2, epsilon)
 
   ### Apply the layer
   def __call__(self, inputs):
@@ -350,6 +374,12 @@ class dynamic_conv2d_to_dense_layer():
 
   def summary_string(self):
     return "({}, {}, {})".format(self.pixels, self.features, self.output_size)
+
+  def apply_adam(self, gradients, 
+                 alpha=0.001, beta1=0.9,
+                 beta2=0.999, epsilon=1e-8):
+    self.w.apply_adam(gradients[0], alpha, beta1, beta2, epsilon)
+    self.b.apply_adam(gradients[1], alpha, beta1, beta2, epsilon)
 
   ### Apply the layer
   def __call__(self, inputs):
@@ -469,6 +499,15 @@ class dynamic_model():
         l.set_state(state[i])
         i=i+1
 
+  def apply_adam(self, gradients, 
+                 alpha=0.001, beta1=0.9,
+                 beta2=0.999, epsilon=1e-8):
+    var_index = 0
+    for l in self.layers:
+      n_vars = len(l.trainable_variables)
+      l.apply_adam(gradients[var_index:var_index+n_vars],
+                   alpha, beta1, beta2, epsilon)
+      var_index += n_vars
 
   ### Apply the model
   def __call__(self, inputs):
