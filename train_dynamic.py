@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import time
+import sys
 
 from dynamic_networks import dynamic_model, dynamic_dense_layer, dynamic_conv2d_layer, dynamic_conv2d_to_dense_layer
 
@@ -11,20 +12,21 @@ from dynamic_networks import dynamic_model, dynamic_dense_layer, dynamic_conv2d_
 # Then adds two dynamic dense layers.
 #
 # The weights are trained using standard methods
-# (Adam here). Between each epoch we update the
-# network a by randomly adding and/or removing
-# features. 
+# (Adam here). At a constant interval, we update
+# the number of features in the network using
+# a batched stochastic update step.
 #################################################
 
 
 ### General optimization parameters
-EPOCHS = 100
+EPOCHS = 50
 IMG_SIZE = 32
 batch_size = 100
 
 #### Network update parameters
 network_updates_per_epoch = 2
 weight_penalty = 1e-9
+start_features = 4
 new_weight_std = 0.1
 
 
@@ -46,12 +48,13 @@ valid_dataset = tf.data.Dataset.from_tensor_slices(valid_data).shuffle(10000).ba
 
 ### Create two dynamic dense layers
 layers = [
-        dynamic_conv2d_layer(3,3,4,new_weight_std),
-        dynamic_conv2d_layer(3,4,4,new_weight_std),
-        dynamic_conv2d_layer(3,4,4,new_weight_std),
-        dynamic_conv2d_to_dense_layer(4*4, 4, 4, new_weight_std),
-        dynamic_dense_layer(4, 4, new_weight_std),
-        dynamic_dense_layer(4, 10, new_weight_std)
+        dynamic_conv2d_layer(3, 3, start_features, new_weight_std),
+        dynamic_conv2d_layer(3, start_features, start_features, new_weight_std),
+        dynamic_conv2d_layer(3, start_features, start_features, new_weight_std),
+        dynamic_conv2d_layer(3, start_features, start_features, new_weight_std),
+        dynamic_conv2d_to_dense_layer(2*2, start_features, start_features, new_weight_std),
+        dynamic_dense_layer(start_features, start_features, new_weight_std),
+        dynamic_dense_layer(start_features, 10, new_weight_std)
       ]
 classifier = dynamic_model(layers, new_weight_std = new_weight_std)
 
@@ -85,28 +88,28 @@ def gradient_train_step(data):
   return loss
 
 
+time_elapsed = 0
 
 ### The update loop
 for epoch in range(1, EPOCHS + 1):
   start_time = time.time()
-
-  # Run a number of network update steps.
-  # Each randomly adds or removes a feature.
   network_changes = 0
-  for i, element in enumerate(train_dataset):
-    network_changes += classifier.update_features(element, compute_loss, weight_penalty)
-    if i==network_updates_per_epoch:
-      break
-  classifier.summary()
-  
-  # Next the standard training step. This runs over all the
-  # batches. 
+
+  # Run training over all batches. 
   train_loss = 0
-  for element in train_dataset:
-    loss = gradient_train_step(element)
-    train_loss += loss.numpy()
+  for i, element in enumerate(train_dataset):
+    if (i+1)%network_updates_every == 0:
+      # network update step
+      network_changes += classifier.update_features(element, compute_loss, weight_penalty)
+    else:
+      # standard gradient update step
+      loss = gradient_train_step(element)
+      train_loss += loss.numpy()
   train_loss *= batch_size/train_images.shape[0]
   end_time = time.time()
+
+  # Print the state of the network
+  classifier.summary()
 
   # Calculate validation loss.
   valid_loss = 0
@@ -114,6 +117,8 @@ for epoch in range(1, EPOCHS + 1):
     loss = compute_loss(element)
     valid_loss += loss.numpy()
   valid_loss *= batch_size/valid_images.shape[0]
-  print("Epoch {} done in {} seconds, loss {}, validation loss {}".format(
-    epoch, end_time - start_time, train_loss, valid_loss))
-
+  print("Epoch {} done in {} seconds, loss {}, validation loss {}, network changes {}".format(
+    epoch, end_time - start_time, train_loss, valid_loss, network_changes))
+  
+  time_elapsed += end_time - start_time
+  print("Time elapsed {}".format(time_elapsed))

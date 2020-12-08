@@ -419,9 +419,14 @@ class dynamic_model():
     return count
 
   def summary(self):
+    num_weights = 0
     for i, l in enumerate(self.layers):
       if l.dynamic:
-        print("Layer {}: {},  number of weights {}".format(i, l.summary_string(), l.weight_count()))
+        l_weights = l.weight_count()
+        num_weights += l_weights
+        print("Layer {}: {},  number of weights {}".format(i, l.summary_string(), l_weights))
+    print("Total: {} weights".format(num_weights))
+
 
   ### Add a feature
   def expand(self):
