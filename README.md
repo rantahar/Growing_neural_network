@@ -12,7 +12,7 @@ features for each layer to two parameters, the number of
 network updates per epoch and the weight penalty.
 
 
-## The layers
+## The Layers
 
 The ``DynamicDense`` class implements a simple dense layer
 with the ability to add and remove features.
