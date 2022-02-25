@@ -26,9 +26,12 @@ batch_size = 100
 
 # Network update parameters
 network_updates_every = 10
-weight_penalty = 1e-9
-start_features = 4
+weight_penalty = 0
+cnn_start_features = 4
+dense_start_features = 10
 new_weight_std = 0.1
+
+BUFFER_SIZE = 100
 
 
 # Download and process the CIFAR dataset
@@ -54,13 +57,13 @@ valid_dataset = (
 
 # Create two dynamic dense layers
 layers = [
-    DynamicConv2DLayer(3, 3, start_features, new_weight_std),
-    DynamicConv2DLayer(3, start_features, start_features, new_weight_std),
-    DynamicConv2DLayer(3, start_features, start_features, new_weight_std),
-    DynamicConv2DLayer(3, start_features, start_features, new_weight_std),
-    DynamicConv2DToDenseLayer(2 * 2, start_features, start_features, new_weight_std),
-    DynamicDenseLayer(start_features, start_features, new_weight_std),
-    DynamicDenseLayer(start_features, 10, new_weight_std),
+    DynamicConv2DLayer(3, 3, cnn_start_features, new_weight_std),
+    DynamicConv2DLayer(3, cnn_start_features, cnn_start_features, new_weight_std),
+    DynamicConv2DLayer(3, cnn_start_features, cnn_start_features, new_weight_std),
+    DynamicConv2DLayer(3, cnn_start_features, cnn_start_features, new_weight_std),
+    DynamicConv2DToDenseLayer(2 * 2, cnn_start_features, dense_start_features, new_weight_std),
+    DynamicDenseLayer(dense_start_features, dense_start_features, new_weight_std),
+    DynamicDenseLayer(dense_start_features, 10, new_weight_std),
 ]
 classifier = DynamicModel(layers, new_weight_std=new_weight_std)
 
@@ -96,6 +99,8 @@ def gradient_train_step(data):
 
 time_elapsed = 0
 
+valid_iterator = iter(valid_dataset.repeat().shuffle(BUFFER_SIZE))
+
 # The update loop
 for epoch in range(1, EPOCHS + 1):
     start_time = time.time()
@@ -106,14 +111,15 @@ for epoch in range(1, EPOCHS + 1):
     for i, element in enumerate(train_dataset):
         if (i + 1) % network_updates_every == 0:
             # network update step
-            network_changes += classifier.stochastic_add_feature(
-                element, compute_loss, weight_penalty
+            valid_element = valid_iterator.next()
+            network_changes += classifier.update_features(
+                valid_element, compute_loss, weight_penalty
             )
-            classifier.prune(0.1)
-        else:
-            # standard gradient update step
-            loss = gradient_train_step(element)
-            train_loss += loss.numpy()
+            classifier.prune(0.01)
+
+        # standard gradient update step
+        loss = gradient_train_step(element)
+        train_loss += loss.numpy()
     train_loss *= batch_size / train_images.shape[0]
     end_time = time.time()
 
@@ -134,3 +140,4 @@ for epoch in range(1, EPOCHS + 1):
 
     time_elapsed += end_time - start_time
     print("Time elapsed {}".format(time_elapsed))
+
