@@ -128,6 +128,18 @@ class DynamicMatrix:
             self.mom = tf.Variable(new_mom, trainable=False)
             self.mom2 = tf.Variable(new_mom2, trainable=False)
 
+    def colsum(self, index, treshhold=0.001):
+        """Find the L1 sum of a given column
+        """
+        abs = tf.math.abs(self.mat)
+        # There must be a simpler way to slice a single column...
+        start = [0 for x in self.shape]
+        size = list(self.shape)
+        size[-1] = 1
+        abs = tf.slice(abs, start, size)
+        values = tf.math.reduce_sum(abs, keepdims=False)
+        return values
+
     def get_state(self):
         return (self.mat, self.mom, self.mom2)
 
@@ -159,7 +171,12 @@ class DynamicMatrix:
 class DynamicDenseLayer:
     """A single dense layer with dynamic input and output size"""
 
-    def __init__(self, input_size, output_size, new_weight_std=0.1):
+    def __init__(
+            self, input_size, output_size,
+            new_weight_std=0.1,
+            miminum_input_size=None,
+            miminum_output_size=None
+    ):
         """Create the layer with a given initial configuration"""
 
         if input_size is not None:
@@ -169,6 +186,17 @@ class DynamicDenseLayer:
             self.input_size = input_size
             self.output_size = output_size
             self.new_weight_std = new_weight_std
+
+            if miminum_input_size is None:
+                self.miminum_input_size = input_size
+            else:
+                self.miminum_input_size = miminum_input_size
+
+            if miminum_output_size is None:
+                self.miminum_output_size = output_size
+            else:
+                self.miminum_output_size = miminum_output_size
+
 
     @classmethod
     def from_state(cls, state, new_weight_std=0.1):
@@ -192,7 +220,7 @@ class DynamicDenseLayer:
     def contract_out(self, index):
         """Remove a random output feature"""
 
-        if self.output_size > 1:
+        if self.output_size > self.miminum_output_size:
             self.w.contract_out(1, index)
             self.b.contract_out(1, index)
             self.output_size = self.output_size - 1
@@ -206,9 +234,19 @@ class DynamicDenseLayer:
     def contract_in(self, index):
         """Remove a random input feature"""
 
-        if self.input_size > 1:
+        if self.input_size > self.miminum_input_size:
             self.w.contract_in(1, index)
             self.input_size = self.input_size - 1
+
+    def prune(self, n, treshhold=0.001):
+        """Remove any features with combined weight values below
+        the threshhold
+        """
+        if self.output_size > self.miminum_output_size:
+            if self.w.colsum(n) < treshhold:
+                self.contract_out(n)
+                return True
+        return False
 
     @property
     def trainable_variables(self):
@@ -262,7 +300,12 @@ class DynamicDenseLayer:
 class DynamicConv2DLayer:
     """A convolution layer with dynamic filter size"""
 
-    def __init__(self, width, input_size, output_size, new_weight_std=0.1):
+    def __init__(
+        self, width, input_size, output_size,
+        new_weight_std=0.1,
+        miminum_input_size=None,
+        miminum_output_size=None
+    ):
         """Create the layer with a given initial configuration"""
 
         if input_size is not None:
@@ -272,6 +315,17 @@ class DynamicConv2DLayer:
             self.input_size = input_size
             self.output_size = output_size
             self.new_weight_std = new_weight_std
+
+            if miminum_input_size is None:
+                self.miminum_input_size = input_size
+            else:
+                self.miminum_input_size = miminum_input_size
+
+            if miminum_output_size is None:
+                self.miminum_output_size = output_size
+            else:
+                self.miminum_output_size = miminum_output_size
+
 
     @classmethod
     def from_state(cls, state, new_weight_std=0.1):
@@ -294,16 +348,26 @@ class DynamicConv2DLayer:
     def contract_out(self, n):
         """Remove a random output feature"""
 
-        if self.output_size > 1:
+        if self.output_size > self.miminum_output_size:
             self.w.contract_out(1, n)
             self.output_size = self.output_size - 1
 
     def contract_in(self, n):
         """Remove a random input feature"""
 
-        if self.input_size > 1:
+        if self.input_size > self.miminum_input_size:
             self.w.contract_in(1, n)
             self.input_size = self.input_size - 1
+
+    def prune(self, n, treshhold=0.001):
+        """Remove any features with combined weight values below
+        the threshhold
+        """
+        if self.output_size > self.miminum_output_size:
+            if self.w.colsum(n) < treshhold:
+                self.contract_out(n)
+                return True
+        return False
 
     def expand_in(self):
         """Add a random input feature"""
@@ -360,7 +424,12 @@ class DynamicConv2DToDenseLayer:
     adding and removing neurons correctly in between
     """
 
-    def __init__(self, pixels, features, output_size, new_weight_std=0.1):
+    def __init__(
+        self, pixels, features, output_size,
+        new_weight_std=0.1,
+        miminum_features=None,
+        miminum_output_size=None
+    ):
         """Create the layer with a given initial configuration"""
 
         if pixels is not None:
@@ -371,6 +440,17 @@ class DynamicConv2DToDenseLayer:
             self.features = features
             self.output_size = output_size
             self.new_weight_std = new_weight_std
+
+            if miminum_features is None:
+                self.miminum_features = features
+            else:
+                self.miminum_features = miminum_features
+
+            if miminum_output_size is None:
+                self.miminum_output_size = output_size
+            else:
+                self.miminum_output_size = miminum_output_size
+
 
     @classmethod
     def from_state(cls, state, new_weight_std=0.1):
@@ -394,7 +474,7 @@ class DynamicConv2DToDenseLayer:
     def contract_out(self, n):
         """Remove a random output feature"""
 
-        if self.output_size > 1:
+        if self.output_size > self.miminum_output_size:
             self.w.contract_out(1, n)
             self.b.contract_out(1, n)
             self.output_size = self.output_size - 1
@@ -408,9 +488,19 @@ class DynamicConv2DToDenseLayer:
     def contract_in(self, n):
         """Remove a random input feature"""
 
-        if self.features > 1:
+        if self.features > self.miminum_features:
             self.w.contract_in(self.pixels, n)
             self.features = self.features - 1
+
+    def prune(self, n, treshhold=0.001):
+        """Remove any features with combined weight values below
+        the threshhold
+        """
+        if self.output_size > self.miminum_output_size:
+            if self.w.colsum(n) < treshhold:
+                self.contract_out(n)
+                return True
+        return False
 
     @property
     def trainable_variables(self):
@@ -533,26 +623,44 @@ class DynamicModel:
         l1.contract_out(n)
         l2.contract_in(n)
 
-    def update_features(
-        self, data, loss_function, weight_penalty=1e-9, layer_change_rate=0.1
+    def prune(self, treshhold=0.01):
+        """Remove any features with combined weight values below
+        the threshhold
+        """
+        for nl in range(len(self.layers)-1):
+            l1 = self.layers[nl]
+            l2 = self.layers[nl + 1]
+            n = 0
+            while n < l1.output_size:
+                if l1.prune(n, treshhold):
+                    l2.contract_in(n)
+                else:
+                    n += 1
+
+    def stochastic_update(
+        self, data, update_function, loss_function, weight_penalty
     ):
-        """Stochastic update: add or remove a feature if it
-        decreases the loss function
+        """Stochastic update: change the network and accept the
+        change if it decreases the loss function
         """
 
         # Get the current loss, including the weight penalty
-        initial_loss = loss_function(data) + weight_penalty * self.weight_count()
+        initial_loss = loss_function(data)
+        initial_loss += weight_penalty * self.weight_count()
+
         # Make note of the current state
         initial_state = self.get_state()
-        # Randomly choose wether to add or remove
-        if np.random.rand() > 0.5:
-            self.expand()
-        else:
-            self.contract()
+
+        # Update the network
+        update_function()
+
         # Calculate the loss in the new network
-        new_loss = loss_function(data) + weight_penalty * self.weight_count()
+        new_loss = loss_function(data)
+        new_loss += weight_penalty * self.weight_count()
+
         # and the change in the loss
         dloss = new_loss - initial_loss
+
         # If the loss increases, return to the original state
         if dloss > 0:
             self.set_state(initial_state)
@@ -560,7 +668,38 @@ class DynamicModel:
         else:
             accepted = True
 
-        # self.summary()
+        return accepted
+
+    def stochastic_add_feature(
+        self, data, loss_function, weight_penalty=0,
+        layer_change_rate=0.1
+    ):
+        """Stochastic update: add a feature if it decreases
+        the loss function
+        """
+        accepted = self.stochastic_update(
+            data, self.expand, loss_function, weight_penalty
+        )
+
+        return accepted
+
+    def update_features(
+        self, data, loss_function, weight_penalty=0,
+        layer_change_rate=0.1
+    ):
+        """Stochastic update: add or remove a feature if it
+        decreases the loss function
+        """
+        # Randomly choose whether to add or remove
+        if np.random.rand() > 0.5:
+            update_function = self.expand
+        else:
+            update_function = self.contract
+
+        accepted = self.stochastic_update(
+            data, update_function, loss_function, weight_penalty
+        )
+
         return accepted
 
     def trainable_variables(self):

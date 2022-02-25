@@ -65,6 +65,7 @@ layers = [
 classifier = DynamicModel(layers, new_weight_std=new_weight_std)
 
 
+
 # The loss function
 # This is the full loss for the gradient descent.
 # the network update step includes a further weight
@@ -105,9 +106,10 @@ for epoch in range(1, EPOCHS + 1):
     for i, element in enumerate(train_dataset):
         if (i + 1) % network_updates_every == 0:
             # network update step
-            network_changes += classifier.update_features(
+            network_changes += classifier.stochastic_add_feature(
                 element, compute_loss, weight_penalty
             )
+            classifier.prune(0.1)
         else:
             # standard gradient update step
             loss = gradient_train_step(element)
