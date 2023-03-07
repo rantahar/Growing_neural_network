@@ -128,17 +128,29 @@ class DynamicMatrix:
             self.mom = tf.Variable(new_mom, trainable=False)
             self.mom2 = tf.Variable(new_mom2, trainable=False)
 
-    def colsum(self, index, treshhold=0.001):
+    def colsum(self, n, index):
         """Find the L1 sum of a given column
         """
-        abs = tf.math.abs(self.mat)
-        # There must be a simpler way to slice a single column...
         start = [0 for x in self.shape]
+        start[-2] = n * index
         size = list(self.shape)
-        size[-1] = 1
-        abs = tf.slice(abs, start, size)
-        values = tf.math.reduce_sum(abs, keepdims=False)
-        return values
+        size[-2] = n
+        abs = tf.slice(self.mat, start, size)
+        abs = tf.math.abs(abs)
+        value = tf.math.reduce_sum(abs, keepdims=False)
+        return value
+
+    def rowsum(self, n, index):
+        """Find the L1 sum of a given row
+        """
+        start = [0 for x in self.shape]
+        start[-2] = n * index
+        size = list(self.shape)
+        size[-2] = n
+        abs = tf.slice(self.mat, start, size)
+        abs = tf.math.abs(abs)
+        value = tf.math.reduce_sum(abs, keepdims=False)
+        return value
 
     def get_state(self):
         return (self.mat, self.mom, self.mom2)
@@ -238,13 +250,13 @@ class DynamicDenseLayer:
             self.w.contract_in(1, index)
             self.input_size = self.input_size - 1
 
-    def prune(self, n, treshhold=0.001):
+    def prune(self, index, treshhold=0.001):
         """Remove any features with combined weight values below
         the threshhold
         """
-        if self.output_size > self.miminum_output_size:
-            if self.w.colsum(n) < treshhold:
-                self.contract_out(n)
+        if self.output_size > self.miminum_input_size:
+            if self.w.rowsum(1, index) < treshhold:
+                self.contract_in(index)
                 return True
         return False
 
@@ -359,13 +371,13 @@ class DynamicConv2DLayer:
             self.w.contract_in(1, n)
             self.input_size = self.input_size - 1
 
-    def prune(self, n, treshhold=0.001):
+    def prune(self, index, treshhold=0.001):
         """Remove any features with combined weight values below
         the threshhold
         """
-        if self.output_size > self.miminum_output_size:
-            if self.w.colsum(n) < treshhold:
-                self.contract_out(n)
+        if self.output_size > self.miminum_input_size:
+            if self.w.rowsum(1, index) < treshhold:
+                self.contract_in(index)
                 return True
         return False
 
@@ -492,13 +504,13 @@ class DynamicConv2DToDenseLayer:
             self.w.contract_in(self.pixels, n)
             self.features = self.features - 1
 
-    def prune(self, n, treshhold=0.001):
+    def prune(self, index, treshhold=0.001):
         """Remove any features with combined weight values below
         the threshhold
         """
-        if self.output_size > self.miminum_output_size:
-            if self.w.colsum(n) < treshhold:
-                self.contract_out(n)
+        if self.features > self.miminum_features:
+            if self.w.rowsum(self.pixels, index) < treshhold:
+                self.contract_in(self.pixels, index)
                 return True
         return False
 
@@ -632,8 +644,8 @@ class DynamicModel:
             l2 = self.layers[nl + 1]
             n = 0
             while n < l1.output_size:
-                if l1.prune(n, treshhold):
-                    l2.contract_in(n)
+                if l2.prune(n, treshhold):
+                    l1.contract_out(n)
                 else:
                     n += 1
 
