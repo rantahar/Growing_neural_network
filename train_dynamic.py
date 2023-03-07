@@ -29,7 +29,7 @@ network_updates_every = 10
 weight_penalty = 0
 cnn_start_features = 4
 dense_start_features = 10
-new_weight_std = 0.1
+new_weight_std = 0.01
 
 BUFFER_SIZE = 100
 

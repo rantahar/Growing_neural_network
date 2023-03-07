@@ -180,8 +180,8 @@ class DynamicDenseLayer:
         """Create the layer with a given initial configuration"""
 
         if input_size is not None:
-            self.w = DynamicMatrix((input_size, output_size), 0.1)
-            self.b = DynamicMatrix((1, output_size), 0.1)
+            self.w = DynamicMatrix((input_size, output_size), new_weight_std)
+            self.b = DynamicMatrix((1, output_size), new_weight_std)
             self.dynamic = True
             self.input_size = input_size
             self.output_size = output_size
@@ -199,7 +199,7 @@ class DynamicDenseLayer:
 
 
     @classmethod
-    def from_state(cls, state, new_weight_std=0.1):
+    def from_state(cls, state, new_weight_std=0.01):
         """Initialize from state tuple (or list)"""
 
         obj = cls(None, None)
@@ -207,7 +207,7 @@ class DynamicDenseLayer:
         obj.b = DynamicMatrix.from_state(state[1])
         obj.input_size = state[2]
         obj.output_size = state[3]
-        obj.new_weight_std = 0.01
+        obj.new_weight_std = new_weight_std
         return obj
 
     def expand_out(self):
@@ -309,7 +309,7 @@ class DynamicConv2DLayer:
         """Create the layer with a given initial configuration"""
 
         if input_size is not None:
-            self.w = DynamicMatrix((width, width, input_size, output_size), 0.1)
+            self.w = DynamicMatrix((width, width, input_size, output_size), new_weight_std)
             self.dynamic = True
             self.width = width
             self.input_size = input_size
@@ -328,7 +328,7 @@ class DynamicConv2DLayer:
 
 
     @classmethod
-    def from_state(cls, state, new_weight_std=0.1):
+    def from_state(cls, state, new_weight_std=0.01):
         """Initialize from state tuple (or list)"""
 
         obj = cls(None, None)
@@ -336,7 +336,7 @@ class DynamicConv2DLayer:
         obj.width = state[1]
         obj.input_size = state[2]
         obj.output_size = state[3]
-        obj.new_weight_std = 0.01
+        obj.new_weight_std = new_weight_std
         return obj
 
     def expand_out(self):
@@ -433,8 +433,8 @@ class DynamicConv2DToDenseLayer:
         """Create the layer with a given initial configuration"""
 
         if pixels is not None:
-            self.w = DynamicMatrix((pixels * features, output_size), 0.1)
-            self.b = DynamicMatrix((1, output_size), 0.1)
+            self.w = DynamicMatrix((pixels * features, output_size), new_weight_std)
+            self.b = DynamicMatrix((1, output_size), new_weight_std)
             self.dynamic = True
             self.pixels = pixels
             self.features = features
@@ -453,7 +453,7 @@ class DynamicConv2DToDenseLayer:
 
 
     @classmethod
-    def from_state(cls, state, new_weight_std=0.1):
+    def from_state(cls, state, new_weight_std=0.01):
         """Initialize from state tuple (or list)"""
 
         obj = cls(None, None)
