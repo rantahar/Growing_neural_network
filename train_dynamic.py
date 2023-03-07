@@ -111,11 +111,10 @@ for epoch in range(1, EPOCHS + 1):
     for i, element in enumerate(train_dataset):
         if (i + 1) % network_updates_every == 0:
             # network update step
-            valid_element = valid_iterator.next()
-            network_changes += classifier.update_features(
-                valid_element, compute_loss, weight_penalty
-            )
+            # 1. Remove any unused features
+            # 2. Add a single new feature
             classifier.prune(0.01)
+            classifier.expand()
 
         # standard gradient update step
         loss = gradient_train_step(element)
